@@ -5,7 +5,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.io.bam import BamReader
 from locusguard.io.fasta import FastaReader
 
-
 # Reuse the fixture-compatible config from the PSV test, but with coords
 # matching the smn_like_fasta / smn_like_bam fixtures.
 

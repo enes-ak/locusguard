@@ -2,13 +2,13 @@
 from locusguard.config.loader import load_config
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import (
+    PSV,
     Coordinates,
     CoordRange,
     EvidenceWeights,
     LocusConfig,
     LocusMetadata,
     ProfileOverride,
-    PSV,
     Thresholds,
 )
 

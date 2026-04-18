@@ -15,6 +15,7 @@ Users who embed LocusGuard in custom scripts use this module:
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,7 +31,6 @@ from locusguard.projection.vcf import LocusRegion, VcfProjector
 from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
 from locusguard.types import Assignment
-
 
 _TECH_DATATYPE_TO_PROFILE = {
     ("ont", "wgs"): "ont_wgs",
@@ -152,7 +152,7 @@ def _count_variants(
     for v in reader.iter_variants():
         total += 1
         for locus_id, chrom, start, end in regions:
-            if v.CHROM == chrom and start <= v.POS <= end:
+            if chrom == v.CHROM and start <= v.POS <= end:
                 annotated += 1
                 counts[locus_id] += 1
                 break
@@ -168,7 +168,6 @@ def _md5(path: Path) -> str:
 
 
 def _config_hash(config: LocusConfig) -> str:
-    import json
     payload = json.dumps(
         config.model_dump(mode="json"),
         sort_keys=True,

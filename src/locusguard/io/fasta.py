@@ -35,7 +35,7 @@ class FastaReader:
     def close(self) -> None:
         self._fa.close()
 
-    def __enter__(self) -> "FastaReader":
+    def __enter__(self) -> FastaReader:
         return self
 
     def __exit__(self, *exc_info: object) -> None:

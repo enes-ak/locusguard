@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+from typing import Any
+
+import cyvcf2
 
 from locusguard.io.vcf import VcfReader, VcfWriter
 from locusguard.types import Assignment
-
 
 LocusRegion = tuple[str, str, int, int]  # (locus_id, chrom, start_1based_incl, end_1based_incl)
 
@@ -58,9 +60,13 @@ class VcfProjector:
 
         writer.close()
 
-    def _info_for_variant(self, variant, per_locus_summary: dict) -> dict[str, object]:
+    def _info_for_variant(
+        self,
+        variant: cyvcf2.Variant,
+        per_locus_summary: dict[str, dict[str, Any]],
+    ) -> dict[str, object]:
         for locus_id, chrom, start, end in self._regions:
-            if variant.CHROM != chrom:
+            if chrom != variant.CHROM:
                 continue
             if start <= variant.POS <= end:
                 summary = per_locus_summary.get(locus_id)

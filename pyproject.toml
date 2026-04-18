@@ -59,6 +59,11 @@ target-version = "py310"
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "PL"]
 ignore = ["PLR0913"]  # too many arguments (common in CLI code)
 
+[tool.ruff.lint.per-file-ignores]
+# Test conventions: magic numbers in assertions are idiomatic, conditional
+# imports / subprocess.run without check are fine in scoped helpers.
+"tests/**/*.py" = ["PLR2004", "PLC0415", "PLW1510"]
+
 [tool.mypy]
 python_version = "3.10"
 strict = true

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import yaml
 
-
 _ENV_VAR_BY_REFERENCE = {
     "grch38": "LOCUSGUARD_GRCH38_FASTA",
 }

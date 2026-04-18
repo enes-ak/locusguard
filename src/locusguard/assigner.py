@@ -9,13 +9,18 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterator
 
+import pysam
+
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
-from locusguard.config.schema import LocusConfig, PSV
+from locusguard.config.schema import PSV, LocusConfig
 from locusguard.evidence.psv import PSVEvidence
 from locusguard.io.bam import BamReader
 from locusguard.io.fasta import FastaReader
 from locusguard.scoring import score_assignment
 from locusguard.types import AnalyzedRead, Assignment, EvidenceScore, PSVObs
+
+# pysam CIGAR op codes (BAM spec): operation integer for soft-clip.
+_CIGAR_SOFT_CLIP = 4
 
 
 def build_analyzed_reads(
@@ -31,7 +36,7 @@ def build_analyzed_reads(
 
     for region in regions:
         for read in bam.fetch(region.chrom, region.start, region.end):
-            if read.query_name in seen:
+            if read.query_name is None or read.query_name in seen:
                 continue
             seen.add(read.query_name)
             analyzed = _analyze_read(read, config.psvs, long_read_hint)
@@ -43,7 +48,7 @@ def build_analyzed_reads(
 
 
 def _analyze_read(
-    read,
+    read: pysam.AlignedSegment,
     psvs: list[PSV],
     long_read_hint: bool,
 ) -> AnalyzedRead:
@@ -67,7 +72,7 @@ def _analyze_read(
 
     softclip_5p, softclip_3p = _softclip_amounts(read)
     return AnalyzedRead(
-        read_id=read.query_name,
+        read_id=read.query_name or "",
         aligned_chrom=read.reference_name or "",
         aligned_pos=read.reference_start,
         psv_observations=observations,
@@ -80,17 +85,17 @@ def _analyze_read(
     )
 
 
-def _ref_to_query_index(read) -> dict[int, int]:
+def _ref_to_query_index(read: pysam.AlignedSegment) -> dict[int, int]:
     pairs = read.get_aligned_pairs(matches_only=True)  # [(qpos, refpos), ...]
     return {ref: q for q, ref in pairs}
 
 
-def _softclip_amounts(read) -> tuple[int, int]:
+def _softclip_amounts(read: pysam.AlignedSegment) -> tuple[int, int]:
     cigar = read.cigartuples or []
     if not cigar:
         return 0, 0
-    sc_5 = cigar[0][1] if cigar[0][0] == 4 else 0
-    sc_3 = cigar[-1][1] if cigar[-1][0] == 4 else 0
+    sc_5 = cigar[0][1] if cigar[0][0] == _CIGAR_SOFT_CLIP else 0
+    sc_3 = cigar[-1][1] if cigar[-1][0] == _CIGAR_SOFT_CLIP else 0
     return sc_5, sc_3
 
 

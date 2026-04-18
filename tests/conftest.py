@@ -6,7 +6,6 @@ from pathlib import Path
 import pysam
 import pytest
 
-
 # Synthetic reference: a single chromosome `chr5` long enough to contain
 # SMN1 and SMN2 approximate coordinates used in tests. We compress the 71 Mb
 # full chromosome down to a 20 kb synthetic substitute that only keeps the

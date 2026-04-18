@@ -15,13 +15,11 @@ class VcfReader:
         self._vcf = cyvcf2.VCF(str(self._path))
 
     def iter_variants(self) -> Iterator[cyvcf2.Variant]:
-        for v in self._vcf:
-            yield v
+        yield from self._vcf
 
     def fetch(self, chrom: str, start: int, end: int) -> Iterator[cyvcf2.Variant]:
         region = f"{chrom}:{start}-{end}"
-        for v in self._vcf(region):
-            yield v
+        yield from self._vcf(region)
 
     @property
     def samples(self) -> list[str]:
@@ -29,7 +27,8 @@ class VcfReader:
 
     @property
     def raw_header(self) -> str:
-        return self._vcf.raw_header
+        # cyvcf2 is untyped; .raw_header is documented to be a str.
+        return str(self._vcf.raw_header)
 
     @property
     def cyvcf2_handle(self) -> cyvcf2.VCF:

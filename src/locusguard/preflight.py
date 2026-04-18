@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cyvcf2
 import pysam
 
 
@@ -39,7 +40,7 @@ def _check_bam(bam: Path) -> None:
             f"BAM index missing for {bam.name}. Run: samtools index {bam}"
         )
     with pysam.AlignmentFile(str(bam), "rb") as b:
-        hd = b.header.get("HD", {})
+        hd = b.header.get("HD", {})  # type: ignore[attr-defined]  # pysam AlignmentHeader supports dict-like .get at runtime
         if hd.get("SO") != "coordinate":
             raise PreflightError(
                 f"BAM {bam.name} is not coordinate-sorted (SO={hd.get('SO', 'unset')}). "
@@ -76,7 +77,6 @@ def _check_vcf(vcf: Path) -> None:
         raise PreflightError(
             f"VCF index missing for {vcf.name}. Run: tabix -p vcf {vcf}"
         )
-    import cyvcf2
     v = cyvcf2.VCF(str(vcf))
     if not list(v.samples):
         raise PreflightError(f"VCF {vcf.name} has no samples")

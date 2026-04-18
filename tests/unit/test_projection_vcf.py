@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from locusguard.io.vcf import VcfReader
 from locusguard.projection.vcf import VcfProjector

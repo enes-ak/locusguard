@@ -1,6 +1,4 @@
 from locusguard.config import (
-    EvidenceWeights,
-    ProfileOverride,
     resolve_profile,
 )
 from locusguard.config.schema import ProfiledWeights

@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
-
+from typing import Any, Literal
 
 Status = Literal["RESOLVED", "PROBABLE", "AMBIGUOUS", "UNASSIGNED"]
 
@@ -36,7 +35,7 @@ class EvidenceScore:
     """Output of a single evidence adapter for a read or read group."""
     source: str                          # e.g., "psv_match"
     normalized: float                    # in [0, 1]
-    raw: dict                            # source-specific raw values
+    raw: dict[str, Any]                  # source-specific raw values
     available: bool                      # False if adapter was disabled
 
 

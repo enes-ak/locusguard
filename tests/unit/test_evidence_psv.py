@@ -4,7 +4,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.evidence.psv import PSVEvidence
 from locusguard.types import AnalyzedRead, PSVObs
 
-
 MINIMAL_SMN1_CFG_DICT = {
     "schema_version": "1.0",
     "locusguard_compat": ">=0.1.0,<1.0.0",

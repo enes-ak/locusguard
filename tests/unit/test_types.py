@@ -1,6 +1,14 @@
+import dataclasses
+
 import pytest
 
-from locusguard.types import PSVObs
+from locusguard.types import (
+    AnalyzedRead,
+    Assignment,
+    EvidenceScore,
+    HaplotypeCluster,
+    PSVObs,
+)
 
 
 def test_psv_obs_holds_base_and_qual():
@@ -11,13 +19,9 @@ def test_psv_obs_holds_base_and_qual():
 
 
 def test_psv_obs_is_frozen():
-    import dataclasses
     obs = PSVObs(base="C", qual=30, reach=True)
     with pytest.raises(dataclasses.FrozenInstanceError):
         obs.base = "T"  # type: ignore[misc]
-
-
-from locusguard.types import AnalyzedRead
 
 
 def test_analyzed_read_holds_read_context():
@@ -40,11 +44,7 @@ def test_analyzed_read_holds_read_context():
     assert read.is_long_read is True
 
 
-from locusguard.types import Assignment, EvidenceScore, HaplotypeCluster
-
-
 def test_evidence_score_is_frozen_and_has_metadata():
-    import dataclasses
     es = EvidenceScore(
         source="psv_match",
         normalized=0.75,

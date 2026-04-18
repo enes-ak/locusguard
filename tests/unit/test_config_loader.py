@@ -1,8 +1,9 @@
+from importlib.resources import files
+
 import pytest
 import yaml
 
 from locusguard.config import load_config
-
 
 MINIMAL_YAML = """
 schema_version: "1.0"
@@ -68,8 +69,6 @@ def test_load_config_raises_on_schema_violation(tmp_path):
     with pytest.raises(ValidationError):
         load_config(path)
 
-
-from importlib.resources import files
 
 def test_bundled_smn1_config_loads():
     path = files("locusguard").joinpath("configs/grch38/SMN/SMN1.yaml")

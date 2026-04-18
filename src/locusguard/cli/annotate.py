@@ -1,19 +1,18 @@
 """`locusguard annotate` — post-calling VCF annotation."""
 from __future__ import annotations
 
+from importlib.resources import files
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import typer
 from rich.console import Console
 
 from locusguard.api import Annotator
 from locusguard.config import load_config
+from locusguard.config.schema import LocusConfig
 from locusguard.io.reference import ReferenceNotFoundError, resolve_reference_fasta
 from locusguard.preflight import PreflightError
-
-if TYPE_CHECKING:
-    from locusguard.config.schema import LocusConfig
 
 console = Console()
 
@@ -111,10 +110,7 @@ def annotate(
     )
 
 
-def _load_configs(locus: str | None, user_configs: list[Path]) -> list["LocusConfig"]:
-    from importlib.resources import files
-    from locusguard.config.schema import LocusConfig
-
+def _load_configs(locus: str | None, user_configs: list[Path]) -> list[LocusConfig]:
     configs: list[LocusConfig] = []
 
     # Bundled configs

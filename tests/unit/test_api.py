@@ -84,7 +84,7 @@ confidence_thresholds:
         data_type="wgs",
     )
     out_vcf = tmp_path / "out.vcf.gz"
-    result = annotator.annotate_vcf(
+    annotator.annotate_vcf(
         bam=smn_like_bam,
         vcf_in=mini_vcf,
         vcf_out=out_vcf,

@@ -1,7 +1,7 @@
 """Pydantic models for LocusGuard locus configuration YAML."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -15,7 +15,7 @@ class CoordRange(BaseModel):
     end: int = Field(ge=1)
 
     @model_validator(mode="after")
-    def _check_order(self) -> "CoordRange":
+    def _check_order(self) -> CoordRange:
         if self.start >= self.end:
             raise ValueError("start must be less than end")
         return self
@@ -103,7 +103,7 @@ class Thresholds(BaseModel):
     probable: float = Field(ge=0, le=1)
 
     @model_validator(mode="after")
-    def _check_order(self) -> "Thresholds":
+    def _check_order(self) -> Thresholds:
         if self.resolved <= self.probable:
             raise ValueError("resolved threshold must be greater than probable threshold")
         return self
@@ -160,7 +160,7 @@ class LocusConfig(BaseModel):
     coordinates: Coordinates
     critical_regions: list[CriticalRegion] = Field(default_factory=list)
     psvs: list[PSV]
-    unique_kmers: dict | None = None
+    unique_kmers: dict[str, Any] | None = None
     gene_conversion: GeneConversion | None = None
     copy_number: CopyNumber | None = None
     evidence_weights: ProfiledWeights

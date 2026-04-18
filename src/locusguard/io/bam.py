@@ -32,8 +32,8 @@ class BamReader:
 
     @property
     def is_sorted_by_coordinate(self) -> bool:
-        hd = self._bam.header.get("HD", {})
-        return hd.get("SO") == "coordinate"
+        hd = self._bam.header.get("HD", {})  # type: ignore[attr-defined]  # pysam AlignmentHeader supports dict-like .get at runtime
+        return bool(hd.get("SO") == "coordinate")
 
     def estimated_is_long_read(self, sample_size: int = 100) -> bool:
         """Peek at up to `sample_size` reads; return True if median length > threshold."""
@@ -50,7 +50,7 @@ class BamReader:
     def close(self) -> None:
         self._bam.close()
 
-    def __enter__(self) -> "BamReader":
+    def __enter__(self) -> BamReader:
         return self
 
     def __exit__(self, *exc_info: object) -> None:

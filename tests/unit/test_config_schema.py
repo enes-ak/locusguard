@@ -3,7 +3,6 @@ from pydantic import ValidationError
 
 from locusguard.config import LocusConfig
 
-
 MINIMAL_VALID_CONFIG = {
     "schema_version": "1.0",
     "locusguard_compat": ">=0.1.0,<1.0.0",

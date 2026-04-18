@@ -12,7 +12,6 @@ from typing import Literal, Protocol, runtime_checkable
 from locusguard.config.schema import LocusConfig
 from locusguard.types import AnalyzedRead, EvidenceScore
 
-
 ReadTech = Literal["ont", "short-read"]
 
 
