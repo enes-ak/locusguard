@@ -31,9 +31,9 @@ def resolve_reference_fasta(
         env_var = _ENV_VAR_BY_REFERENCE.get(reference, f"LOCUSGUARD_{reference.upper()}_FASTA")
         raise ReferenceNotFoundError(
             f"Reference FASTA for '{reference}' not provided. "
-            f"Set --reference-fasta, {env_var} env var, or "
-            f"~/.locusguard/config.yaml references.{reference} entry. "
-            f"Or run: locusguard fetch-reference {reference}"
+            f"Set one of: --reference-fasta /path/to.fa, "
+            f"{env_var} env var, or add a 'references.{reference}: /path/to.fa' "
+            f"entry to ~/.locusguard/config.yaml."
         )
     if not candidate.exists():
         raise ReferenceNotFoundError(
