@@ -69,3 +69,53 @@ def smn_like_fasta(tmp_path: Path) -> Path:
             fh.write(buf[i : i + 70] + "\n")
     pysam.faidx(str(path))
     return path
+
+
+@pytest.fixture
+def smn_like_bam(tmp_path: Path, smn_like_fasta: Path) -> Path:
+    """A BAM with 10 reads over SMN1 PSV region + 10 reads over SMN2 PSV region.
+
+    Reads are long (2 kb) ONT-style and all have MAPQ=60.
+    SMN1-region reads carry base C at pos 14000.
+    SMN2-region reads carry base T at pos 4000.
+    """
+    bam_path = tmp_path / "mini.bam"
+    header = {
+        "HD": {"VN": "1.6", "SO": "coordinate"},
+        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
+    }
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        # SMN1-region reads
+        for i in range(10):
+            read = pysam.AlignedSegment()
+            read.query_name = f"smn1_read_{i}"
+            read.query_sequence = _read_sequence_for(smn_like_fasta, "chr5", 13000, 15000)
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = 13000
+            read.mapping_quality = 60
+            read.cigar = [(0, 2000)]  # 2000M
+            read.query_qualities = pysam.qualitystring_to_array("I" * 2000)
+            bam.write(read)
+
+        # SMN2-region reads
+        for i in range(10):
+            read = pysam.AlignedSegment()
+            read.query_name = f"smn2_read_{i}"
+            read.query_sequence = _read_sequence_for(smn_like_fasta, "chr5", 3000, 5000)
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = 3000
+            read.mapping_quality = 60
+            read.cigar = [(0, 2000)]
+            read.query_qualities = pysam.qualitystring_to_array("I" * 2000)
+            bam.write(read)
+
+    pysam.sort("-o", str(bam_path), str(bam_path))
+    pysam.index(str(bam_path))
+    return bam_path
+
+
+def _read_sequence_for(fasta: Path, chrom: str, start: int, end: int) -> str:
+    with pysam.FastaFile(str(fasta)) as fa:
+        return fa.fetch(chrom, start, end).upper()
