@@ -1,5 +1,6 @@
 """Configuration layer."""
 from locusguard.config.loader import load_config
+from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import (
     Coordinates,
     CoordRange,
@@ -20,5 +21,7 @@ __all__ = [
     "LocusMetadata",
     "ProfileOverride",
     "PSV",
+    "ResolvedProfile",
+    "resolve_profile",
     "Thresholds",
 ]
