@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "locusguard"
+version = "0.1.0.dev0"
+description = "Caller-agnostic locus disambiguation engine for paralog and pseudogene regions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "LocusGuard contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "pysam>=0.22",
+    "cyvcf2>=0.30.28",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+locusguard = "locusguard.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/locusguard"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"configs" = "locusguard/configs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: end-to-end tests using real BAM/VCF fixtures",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "PL"]
+ignore = ["PLR0913"]  # too many arguments (common in CLI code)
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+packages = ["locusguard"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["pysam", "cyvcf2"]
+ignore_missing_imports = true
