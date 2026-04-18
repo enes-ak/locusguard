@@ -119,3 +119,20 @@ def smn_like_bam(tmp_path: Path, smn_like_fasta: Path) -> Path:
 def _read_sequence_for(fasta: Path, chrom: str, start: int, end: int) -> str:
     with pysam.FastaFile(str(fasta)) as fa:
         return fa.fetch(chrom, start, end).upper()
+
+
+@pytest.fixture
+def mini_vcf(tmp_path: Path) -> Path:
+    """A gzipped, tabix-indexed VCF with two variants - one in SMN1 region, one in SMN2."""
+    vcf_text = """##fileformat=VCFv4.2
+##contig=<ID=chr5,length=20000>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE1
+chr5\t3950\t.\tC\tT\t40\tPASS\t.\tGT\t0/1
+chr5\t13950\t.\tA\tG\t45\tPASS\t.\tGT\t0/1
+"""
+    raw = tmp_path / "mini.vcf"
+    raw.write_text(vcf_text)
+    pysam.tabix_compress(str(raw), str(raw) + ".gz", force=True)
+    pysam.tabix_index(str(raw) + ".gz", preset="vcf", force=True)
+    return Path(str(raw) + ".gz")
