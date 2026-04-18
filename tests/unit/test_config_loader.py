@@ -67,3 +67,19 @@ def test_load_config_raises_on_schema_violation(tmp_path):
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
         load_config(path)
+
+
+from importlib.resources import files
+
+def test_bundled_smn1_config_loads():
+    path = files("locusguard").joinpath("configs/grch38/SMN/SMN1.yaml")
+    cfg = load_config(str(path))
+    assert cfg.locus.id == "SMN1"
+    assert cfg.coordinates.primary.chrom == "chr5"
+    assert any(p.name == "c.840C>T" for p in cfg.psvs)
+
+
+def test_bundled_smn2_config_loads():
+    path = files("locusguard").joinpath("configs/grch38/SMN/SMN2.yaml")
+    cfg = load_config(str(path))
+    assert cfg.locus.id == "SMN2"
