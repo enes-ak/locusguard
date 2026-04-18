@@ -43,9 +43,6 @@ locusguard = "locusguard.cli.main:app"
 [tool.hatch.build.targets.wheel]
 packages = ["src/locusguard"]
 
-[tool.hatch.build.targets.wheel.shared-data]
-"configs" = "locusguard/configs"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
