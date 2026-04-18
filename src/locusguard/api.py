@@ -1,0 +1,181 @@
+"""Library-facing Python API for LocusGuard.
+
+Users who embed LocusGuard in custom scripts use this module:
+
+    from locusguard.api import Annotator
+    from locusguard.config import load_config
+
+    annotator = Annotator(
+        configs=[load_config(p) for p in config_paths],
+        reference_fasta=Path("/refs/grch38.fa"),
+        tech="ont", data_type="wgs",
+    )
+    annotator.annotate_vcf(bam=..., vcf_in=..., vcf_out=...)
+"""
+from __future__ import annotations
+
+import hashlib
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+from locusguard import __version__
+from locusguard.assigner import LocusAssigner
+from locusguard.config.schema import LocusConfig
+from locusguard.io.bam import BamReader
+from locusguard.io.fasta import FastaReader
+from locusguard.io.vcf import VcfReader
+from locusguard.preflight import run_preflight
+from locusguard.projection.vcf import LocusRegion, VcfProjector
+from locusguard.reporting.manifest import write_manifest
+from locusguard.reporting.summary import write_summary
+from locusguard.types import Assignment
+
+
+_TECH_DATATYPE_TO_PROFILE = {
+    ("ont", "wgs"): "ont_wgs",
+    ("ont", "wes"): "ont_wes",
+    ("short-read", "wgs"): "short_read_wgs",
+    ("short-read", "wes"): "short_read_wes",
+}
+
+
+@dataclass(slots=True)
+class AnnotationResult:
+    variants_total: int
+    variants_annotated: int
+    assignments_by_locus: dict[str, list[Assignment]]
+
+
+class Annotator:
+    """High-level entry point for annotating a VCF from a BAM."""
+
+    def __init__(
+        self,
+        configs: list[LocusConfig],
+        reference_fasta: Path,
+        tech: str,
+        data_type: str,
+    ) -> None:
+        self._configs = configs
+        self._reference_fasta = reference_fasta
+        self._tech = tech
+        self._data_type = data_type
+        self._profile_name = _TECH_DATATYPE_TO_PROFILE.get((tech, data_type))
+
+    def annotate_vcf(
+        self,
+        bam: Path,
+        vcf_in: Path,
+        vcf_out: Path,
+        summary_path: Path | None = None,
+        manifest_path: Path | None = None,
+        sample_name: str | None = None,
+    ) -> AnnotationResult:
+        run_preflight(bam=bam, vcf=vcf_in, fasta=self._reference_fasta)
+        start = time.perf_counter()
+
+        assignments_by_locus: dict[str, list[Assignment]] = {}
+        warnings: list[str] = []
+        with (
+            BamReader(bam) as bam_reader,
+            FastaReader(self._reference_fasta) as fasta_reader,
+        ):
+            for cfg in self._configs:
+                assigner = LocusAssigner(cfg, profile_name=self._profile_name)
+                assignments_by_locus[cfg.locus.id] = assigner.assign(
+                    bam_reader, fasta_reader,
+                )
+                warnings.extend(assigner.warnings)
+
+        locus_regions: list[LocusRegion] = [
+            (cfg.locus.id, cfg.coordinates.primary.chrom,
+             cfg.coordinates.primary.start, cfg.coordinates.primary.end)
+            for cfg in self._configs
+        ]
+
+        projector = VcfProjector(
+            input_vcf=vcf_in,
+            output_vcf=vcf_out,
+            locus_regions=locus_regions,
+        )
+        projector.run(assignments_by_locus)
+
+        variants_total, variants_annotated, counts_by_locus = _count_variants(
+            vcf_in, locus_regions,
+        )
+
+        runtime = time.perf_counter() - start
+
+        if summary_path is not None:
+            write_summary(
+                output_path=summary_path,
+                sample_name=sample_name or _infer_sample_name(vcf_in),
+                reference="grch38",
+                tech=self._tech,
+                data_type=self._data_type,
+                runtime_seconds=round(runtime, 3),
+                assignments_by_locus=assignments_by_locus,
+                variant_counts_by_locus=counts_by_locus,
+            )
+
+        if manifest_path is not None:
+            write_manifest(
+                output_path=manifest_path,
+                locusguard_version=__version__,
+                command_line=f"annotate bam={bam} vcf={vcf_in} out={vcf_out}",
+                reference_fasta_path=str(self._reference_fasta),
+                reference_fasta_md5=_md5(self._reference_fasta),
+                config_hashes={cfg.locus.id: _config_hash(cfg) for cfg in self._configs},
+                tech=self._tech,
+                data_type=self._data_type,
+                profile_used=self._profile_name,
+                runtime_seconds=round(runtime, 3),
+                warnings=warnings,
+            )
+
+        return AnnotationResult(
+            variants_total=variants_total,
+            variants_annotated=variants_annotated,
+            assignments_by_locus=assignments_by_locus,
+        )
+
+
+def _count_variants(
+    vcf_in: Path,
+    regions: list[LocusRegion],
+) -> tuple[int, int, dict[str, int]]:
+    total = 0
+    annotated = 0
+    counts: dict[str, int] = {locus_id: 0 for locus_id, *_ in regions}
+    reader = VcfReader(vcf_in)
+    for v in reader.iter_variants():
+        total += 1
+        for locus_id, chrom, start, end in regions:
+            if v.CHROM == chrom and start <= v.POS <= end:
+                annotated += 1
+                counts[locus_id] += 1
+                break
+    return total, annotated, counts
+
+
+def _md5(path: Path) -> str:
+    h = hashlib.md5(usedforsecurity=False)
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _config_hash(config: LocusConfig) -> str:
+    import json
+    payload = json.dumps(
+        config.model_dump(mode="json"),
+        sort_keys=True,
+    ).encode()
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def _infer_sample_name(vcf_in: Path) -> str:
+    samples = VcfReader(vcf_in).samples
+    return samples[0] if samples else "unknown"
