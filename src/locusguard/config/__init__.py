@@ -1,4 +1,5 @@
 """Configuration layer."""
+from locusguard.config.loader import load_config
 from locusguard.config.schema import (
     Coordinates,
     CoordRange,
@@ -14,6 +15,7 @@ __all__ = [
     "Coordinates",
     "CoordRange",
     "EvidenceWeights",
+    "load_config",
     "LocusConfig",
     "LocusMetadata",
     "ProfileOverride",
