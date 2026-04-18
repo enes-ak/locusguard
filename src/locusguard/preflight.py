@@ -1,0 +1,82 @@
+"""Pre-flight input validation - fail fast with actionable messages."""
+from __future__ import annotations
+
+from pathlib import Path
+
+import pysam
+
+
+class PreflightError(RuntimeError):
+    """A pre-flight check failed; the run must not proceed."""
+
+
+def run_preflight(bam: Path, vcf: Path | None, fasta: Path) -> None:
+    """Validate that inputs are structurally sound before processing starts.
+
+    Checks:
+      - BAM has a usable index (.bai or .csi)
+      - BAM is coordinate-sorted
+      - FASTA has a .fai (builds one if missing)
+      - BAM chromosomes are present in FASTA
+      - VCF (if provided) has .tbi index and at least one sample
+
+    Raises PreflightError with a human-readable message on any failure.
+    """
+    _check_bam(bam)
+    _check_fasta(fasta)
+    _check_bam_fasta_compat(bam, fasta)
+    if vcf is not None:
+        _check_vcf(vcf)
+
+
+def _check_bam(bam: Path) -> None:
+    if not bam.exists():
+        raise PreflightError(f"BAM file not found: {bam}")
+    bai = bam.with_suffix(bam.suffix + ".bai")
+    csi = bam.with_suffix(bam.suffix + ".csi")
+    if not bai.exists() and not csi.exists():
+        raise PreflightError(
+            f"BAM index missing for {bam.name}. Run: samtools index {bam}"
+        )
+    with pysam.AlignmentFile(str(bam), "rb") as b:
+        hd = b.header.get("HD", {})
+        if hd.get("SO") != "coordinate":
+            raise PreflightError(
+                f"BAM {bam.name} is not coordinate-sorted (SO={hd.get('SO', 'unset')}). "
+                f"Run: samtools sort -o sorted.bam {bam}"
+            )
+
+
+def _check_fasta(fasta: Path) -> None:
+    if not fasta.exists():
+        raise PreflightError(f"Reference FASTA not found: {fasta}")
+    fai = fasta.with_suffix(fasta.suffix + ".fai")
+    if not fai.exists():
+        pysam.faidx(str(fasta))
+
+
+def _check_bam_fasta_compat(bam: Path, fasta: Path) -> None:
+    with pysam.AlignmentFile(str(bam), "rb") as b, pysam.FastaFile(str(fasta)) as f:
+        bam_chroms = set(b.references)
+        fasta_chroms = set(f.references)
+        missing = bam_chroms - fasta_chroms
+        if missing:
+            raise PreflightError(
+                f"BAM contains chromosome(s) not found in FASTA: {sorted(missing)[:3]}... "
+                f"This indicates a reference mismatch."
+            )
+
+
+def _check_vcf(vcf: Path) -> None:
+    if not vcf.exists():
+        raise PreflightError(f"VCF file not found: {vcf}")
+    tbi = Path(str(vcf) + ".tbi")
+    csi = Path(str(vcf) + ".csi")
+    if not tbi.exists() and not csi.exists():
+        raise PreflightError(
+            f"VCF index missing for {vcf.name}. Run: tabix -p vcf {vcf}"
+        )
+    import cyvcf2
+    v = cyvcf2.VCF(str(vcf))
+    if not list(v.samples):
+        raise PreflightError(f"VCF {vcf.name} has no samples")
