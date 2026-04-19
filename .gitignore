@@ -19,3 +19,8 @@ htmlcov/
 .venv/
 venv/
 .DS_Store
+
+# Internal planning / design docs — kept local, not published
+docs/superpowers/
+CLAUDE.md
+.claude/
