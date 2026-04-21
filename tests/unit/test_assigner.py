@@ -111,3 +111,36 @@ def test_locus_key_is_stable(smn_like_bam, smn_like_fasta, smn1_cfg):
         second = assigner.assign(bam, fa)
     assert first[0].locus_key == second[0].locus_key
     assert first[0].locus_key.startswith("SMN1:")
+
+
+def test_assigner_attaches_cluster_id_to_assignments(
+    smn_like_bam, smn_like_fasta, smn1_cfg,
+):
+    from locusguard.assigner import LocusAssigner
+    from locusguard.io.bam import BamReader
+    from locusguard.io.fasta import FastaReader
+
+    assigner = LocusAssigner(smn1_cfg, profile_name=None)
+    with BamReader(smn_like_bam) as bam, FastaReader(smn_like_fasta) as fa:
+        assignments = assigner.assign(bam, fa)
+    # All SMN1-region reads should share one cluster
+    smn1_reads = [a for a in assignments if a.read_id.startswith("smn1_read_")]
+    cluster_ids = {a.cluster_id for a in smn1_reads}
+    assert len(cluster_ids) == 1
+    assert next(iter(cluster_ids)) is not None
+
+
+def test_assigner_exposes_clusters_via_property(
+    smn_like_bam, smn_like_fasta, smn1_cfg,
+):
+    from locusguard.assigner import LocusAssigner
+    from locusguard.io.bam import BamReader
+    from locusguard.io.fasta import FastaReader
+
+    assigner = LocusAssigner(smn1_cfg, profile_name=None)
+    with BamReader(smn_like_bam) as bam, FastaReader(smn_like_fasta) as fa:
+        assigner.assign(bam, fa)
+    clusters = assigner.haplotype_clusters
+    assert len(clusters) >= 1
+    for cluster in clusters:
+        assert cluster.hap_id.startswith("H")
