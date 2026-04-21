@@ -224,8 +224,8 @@ def gene_conversion_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
     }
     with pysam.FastaFile(str(multi_psv_fasta)) as fa:
         base_seq = list(fa.fetch(MINI_CHROM, 12500, 14500).upper())
-    # Flip PSV1 (offset 500 within the slice) to T (SMN2-like)
-    base_seq[500] = "T"
+    # Flip PSV1 (1-based pos 13000 -> 0-based slice index 499) to T (SMN2-like)
+    base_seq[499] = "T"
     synth_seq = "".join(base_seq)
 
     with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
