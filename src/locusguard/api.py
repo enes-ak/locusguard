@@ -33,7 +33,7 @@ from locusguard.reporting.haplotypes_tsv import write_haplotypes_tsv
 from locusguard.reporting.html_report import write_html_report
 from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
-from locusguard.types import Assignment, HaplotypeCluster
+from locusguard.types import Assignment, CnEstimate, HaplotypeCluster
 
 _TECH_DATATYPE_TO_PROFILE = {
     ("ont", "wgs"): "ont_wgs",
@@ -55,6 +55,7 @@ class AnnotationResult:
     variants_annotated: int
     assignments_by_locus: dict[str, list[Assignment]]
     haplotype_clusters_by_locus: dict[str, list[HaplotypeCluster]]
+    cn_by_locus: dict[str, CnEstimate]
 
 
 class Annotator:
@@ -90,6 +91,7 @@ class Annotator:
 
         assignments_by_locus: dict[str, list[Assignment]] = {}
         clusters_by_locus: dict[str, list[HaplotypeCluster]] = {}
+        cn_by_locus: dict[str, CnEstimate] = {}
         warnings: list[str] = [_PHASE2_SCOPE_WARNING]
         with (
             BamReader(bam) as bam_reader,
@@ -101,6 +103,8 @@ class Annotator:
                     bam_reader, fasta_reader,
                 )
                 clusters_by_locus[cfg.locus.id] = assigner.haplotype_clusters
+                if assigner.cn_estimate is not None:
+                    cn_by_locus[cfg.locus.id] = assigner.cn_estimate
                 warnings.extend(assigner.warnings)
 
         locus_regions: list[LocusRegion] = [
@@ -185,6 +189,7 @@ class Annotator:
             variants_annotated=variants_annotated,
             assignments_by_locus=assignments_by_locus,
             haplotype_clusters_by_locus=clusters_by_locus,
+            cn_by_locus=cn_by_locus,
         )
 
     def _derive_gene_conv_maps(
