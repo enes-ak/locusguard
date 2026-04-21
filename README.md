@@ -4,7 +4,7 @@ Caller-agnostic locus disambiguation engine for paralog and pseudogene regions �
 
 ## What it does
 
-LocusGuard annotates variants in problematic genomic regions (paralog genes, pseudogenes, segmental duplications) with the *true* locus of origin plus a confidence score. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
+LocusGuard annotates variants in problematic genomic regions (paralog genes, pseudogenes, segmental duplications) with the *true* locus of origin plus a confidence score, supported by multi-evidence scoring: PSV match, haplotype consistency, MAPQ pattern, soft-clip pattern, and gene-conversion detection. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
 
 Each annotated variant carries new INFO fields:
 
@@ -13,25 +13,31 @@ Each annotated variant carries new INFO fields:
 - `LOCUS_STATUS` — `RESOLVED` | `PROBABLE` | `AMBIGUOUS` | `UNASSIGNED`
 - `LOCUS_EVIDENCE` — per-source decomposition
 - `LOCUS_KEY` — cross-output traceability key
+- `GENE_CONVERSION_FLAG` — 1 if gene conversion suspected at this locus
 
 ## Status
 
-**Phase 1 MVP.** Supported: SMN1/SMN2 on GRCh38. ONT + short-read inputs. PSV-based assignment.
+**Phase 2 (A-core).** Supported: SMN1/SMN2 on GRCh38. ONT + short-read inputs. Multi-evidence scoring with haplotype clustering and gene-conversion detection.
 
-Not yet supported: GBA/PMS2 (Phase 4), haplotype clustering (Phase 2), BAM output (Phase 3), HTML report (Phase 3), benchmark validation (Phase 5).
+Not yet supported: GBA/PMS2 (Phase 3), BAM output (Phase 3), CN estimation, WES mode (Phase 2.5), packaging for Bioconda/Docker/nf-core (Phase 4).
 
 ## Install
 
 ```bash
-pip install locusguard  # once published to PyPI
-# or, for development:
+pip install git+https://github.com/enes-ak/locusguard.git
+```
+
+Or from source (editable, for development):
+
+```bash
+git clone https://github.com/enes-ak/locusguard
+cd locusguard
 pip install -e ".[dev]"
 ```
 
 ## Quickstart
 
 ```bash
-# Assumes GRCh38 FASTA available at $LOCUSGUARD_GRCH38_FASTA
 export LOCUSGUARD_GRCH38_FASTA=/refs/grch38.primary.fa
 
 locusguard annotate \
@@ -41,14 +47,18 @@ locusguard annotate \
   --tech ont \
   --data-type wgs \
   --locus SMN1,SMN2 \
+  --emit-report \
   --output patient.lg.vcf.gz
 ```
 
 Outputs:
 
-- `patient.lg.vcf.gz` — annotated VCF (INFO fields added)
-- `patient.lg.summary.json` — per-locus status and counts
-- `patient.lg.manifest.json` — versions, config hashes, command, runtime
+- `patient.lg.vcf.gz` — annotated VCF
+- `patient.lg.summary.json` — per-locus status, gene conversion flags, read counts
+- `patient.lg.manifest.json` — versions, config hashes, command, runtime, degradations
+- `patient.lg.report.html` — human-readable report (with `--emit-report`)
+- `patient.lg.assignments.tsv` (with `--emit-assignments`) — per-read detail
+- `patient.lg.haplotypes.tsv` (with `--emit-haplotypes`) — per-cluster detail
 
 ## Library use
 
@@ -71,14 +81,13 @@ result = annotator.annotate_vcf(
     bam=Path("patient.bam"),
     vcf_in=Path("patient.vcf.gz"),
     vcf_out=Path("patient.lg.vcf.gz"),
-    summary_path=Path("patient.lg.summary.json"),
-    manifest_path=Path("patient.lg.manifest.json"),
+    html_report_path=Path("patient.lg.report.html"),
 )
+
+# Phase 2 additions:
+for locus_id, clusters in result.haplotype_clusters_by_locus.items():
+    print(f"{locus_id}: {len(clusters)} haplotype cluster(s)")
 ```
-
-## Design
-
-See [`docs/superpowers/specs/2026-04-18-locusguard-design.md`](docs/superpowers/specs/2026-04-18-locusguard-design.md) for the design rationale, architecture, and roadmap.
 
 ## License
 
