@@ -12,9 +12,12 @@ from collections.abc import Iterator
 
 import pysam
 
+from locusguard.cn import estimate_cn
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import PSV, LocusConfig
+from locusguard.depth import DepthStats, compute_region_depth
 from locusguard.evidence.base import EvidenceSource, ReadTech
+from locusguard.evidence.coverage_ratio import CoverageRatioEvidence
 from locusguard.evidence.haplotype_consistency import HaplotypeConsistencyEvidence
 from locusguard.evidence.mapq_pattern import MapqPatternEvidence
 from locusguard.evidence.psv import PSVEvidence
@@ -30,6 +33,7 @@ from locusguard.scoring import score_assignment
 from locusguard.types import (
     AnalyzedRead,
     Assignment,
+    CnEstimate,
     EvidenceScore,
     HaplotypeCluster,
     PSVObs,
@@ -129,13 +133,16 @@ class LocusAssigner:
         )
         self._locus_key = self._compute_locus_key()
         self._psv_names = [p.name for p in config.psvs]
-        self._adapters: list[EvidenceSource] = [
+        self._haplotype_clusters: list[HaplotypeCluster] = []
+        self._cn_estimate: CnEstimate | None = None
+        # _adapters is rebuilt per-assign because CoverageRatioEvidence needs
+        # a fresh depths_by_locus from the current BAM.
+        self._base_adapters: list[EvidenceSource] = [
             PSVEvidence(target_locus=config.locus.id),
             MapqPatternEvidence(),
             SoftclipEvidence(),
             HaplotypeConsistencyEvidence(),
         ]
-        self._haplotype_clusters: list[HaplotypeCluster] = []
 
     @property
     def warnings(self) -> list[str]:
@@ -146,6 +153,11 @@ class LocusAssigner:
     def haplotype_clusters(self) -> list[HaplotypeCluster]:
         """Haplotype clusters computed during the last assign() call."""
         return list(self._haplotype_clusters)
+
+    @property
+    def cn_estimate(self) -> CnEstimate | None:
+        """CN estimate computed during the last assign() call."""
+        return self._cn_estimate
 
     def assign(self, bam: BamReader, fasta: FastaReader) -> list[Assignment]:
         reads = list(build_analyzed_reads(bam, fasta, self._config, self._profile_name))
@@ -175,11 +187,37 @@ class LocusAssigner:
             tech = "short-read"
         else:
             tech = "ont" if reads and reads[0].is_long_read else "short-read"
+
+        # Depth preflight pass: measure depth of primary + paralog + control regions
+        depths_by_name = self._measure_depths(bam)
+
+        # Build depths_by_locus keyed by locus IDs (for coverage_ratio adapter)
+        depths_by_locus: dict[str, float] = {
+            self._config.locus.id: depths_by_name[self._config.locus.id].mean_depth,
+        }
+        for paralog_id in self._config.coordinates.paralogs:
+            paralog_stats = depths_by_name.get(paralog_id)
+            depths_by_locus[paralog_id] = (
+                paralog_stats.mean_depth if paralog_stats is not None else 0.0
+            )
+
+        # CN estimation
+        self._cn_estimate = estimate_cn(self._config, depths_by_name, tech=tech)
+
+        # Assemble adapters with fresh CoverageRatioEvidence
+        adapters: list[EvidenceSource] = [
+            *self._base_adapters,
+            CoverageRatioEvidence(
+                locus_id=self._config.locus.id,
+                depths_by_locus=depths_by_locus,
+            ),
+        ]
+
         assignments: list[Assignment] = []
         for read in reads:
             read_cluster: HaplotypeCluster | None = read_to_cluster.get(read.read_id)
             evidences: list[EvidenceScore] = []
-            for adapter in self._adapters:
+            for adapter in adapters:
                 if not adapter.supports(tech):
                     evidences.append(
                         EvidenceScore(
@@ -216,6 +254,63 @@ class LocusAssigner:
                 )
             )
         return assignments
+
+    def _measure_depths(self, bam: BamReader) -> dict[str, DepthStats]:
+        """Measure depth for primary + paralog + control regions.
+
+        Regions whose coordinates fall entirely outside the BAM's configured
+        contig range (e.g. synthetic test BAMs that don't span full GRCh38)
+        gracefully return a zero-depth DepthStats rather than propagating a
+        pysam ``ValueError``.
+        """
+        results: dict[str, DepthStats] = {}
+
+        primary = self._config.coordinates.primary
+        results[self._config.locus.id] = self._safe_compute_depth(
+            bam, primary.chrom, primary.start, primary.end,
+            region_name=self._config.locus.id,
+        )
+
+        for paralog_id, coord in self._config.coordinates.paralogs.items():
+            results[paralog_id] = self._safe_compute_depth(
+                bam, coord.chrom, coord.start, coord.end,
+                region_name=paralog_id,
+            )
+
+        for ctrl in self._config.control_regions:
+            results[ctrl.name] = self._safe_compute_depth(
+                bam, ctrl.chrom, ctrl.start, ctrl.end,
+                region_name=ctrl.name,
+            )
+
+        return results
+
+    @staticmethod
+    def _safe_compute_depth(
+        bam: BamReader,
+        chrom: str,
+        start: int,
+        end: int,
+        region_name: str,
+    ) -> DepthStats:
+        """Wrap ``compute_region_depth`` and fall back to zero depth when the
+        region is outside the BAM's contig bounds (common for synthetic
+        fixtures or contigs absent from the BAM header)."""
+        try:
+            return compute_region_depth(
+                bam, chrom, start, end, region_name=region_name,
+            )
+        except (ValueError, KeyError):
+            return DepthStats(
+                region_name=region_name,
+                chrom=chrom,
+                start=start,
+                end=end,
+                mean_depth=0.0,
+                median_depth=0.0,
+                length_bp=max(0, end - start + 1),
+                reads_counted=0,
+            )
 
     def _compute_locus_key(self) -> str:
         c = self._config.coordinates.primary

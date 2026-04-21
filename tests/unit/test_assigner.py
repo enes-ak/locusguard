@@ -144,3 +144,31 @@ def test_assigner_exposes_clusters_via_property(
     assert len(clusters) >= 1
     for cluster in clusters:
         assert cluster.hap_id.startswith("H")
+
+
+def test_assigner_exposes_cn_estimate(
+    smn_like_bam, smn_like_fasta, smn1_cfg,
+):
+    # Add control regions to the fixture config so CN estimation can run.
+    # We reuse the synthetic FASTA's chr5 layout with a synthetic "control"
+    # region at 18000-19000 (no reads there → triggers insufficient_depth,
+    # which is the expected graceful failure for this minimal fixture).
+    from locusguard.assigner import LocusAssigner
+    from locusguard.config.schema import LocusConfig
+    from locusguard.io.bam import BamReader
+    from locusguard.io.fasta import FastaReader
+
+    cfg_dict = smn1_cfg.model_dump()
+    cfg_dict["control_regions"] = [
+        {"name": "ctrl_A", "chrom": "chr5", "start": 18000, "end": 19000},
+    ]
+    cfg_with_ctrl = LocusConfig.model_validate(cfg_dict)
+
+    assigner = LocusAssigner(cfg_with_ctrl, profile_name=None)
+    with BamReader(smn_like_bam) as bam, FastaReader(smn_like_fasta) as fa:
+        assigner.assign(bam, fa)
+    cn = assigner.cn_estimate
+    assert cn is not None
+    assert cn.locus_id == "SMN1"
+    # No reads in control region → insufficient_depth graceful fail
+    assert cn.status == "insufficient_depth"
