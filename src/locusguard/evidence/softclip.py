@@ -14,7 +14,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
-
 _NOISE_THRESHOLD_BP = 10
 _DEFAULT_READ_LENGTH = 2000
 

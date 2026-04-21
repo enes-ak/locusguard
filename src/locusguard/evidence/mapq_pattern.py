@@ -13,7 +13,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
-
 _MAX_MAPQ = 60
 
 

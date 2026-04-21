@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import csv
+from collections.abc import Iterable
 from pathlib import Path
 
-from locusguard.types import Assignment
-
+from locusguard.types import Assignment, EvidenceScore
 
 _HEADER = [
     "read_id",
@@ -42,8 +42,8 @@ def write_assignments_tsv(
                 ])
 
 
-def _compact_evidence(scores) -> str:
-    parts = []
+def _compact_evidence(scores: Iterable[EvidenceScore]) -> str:
+    parts: list[str] = []
     for ev in scores:
         if ev.available:
             parts.append(f"{ev.source}:{ev.normalized:.2f}")

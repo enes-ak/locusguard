@@ -6,7 +6,6 @@ from pathlib import Path
 
 from locusguard.types import HaplotypeCluster
 
-
 _HEADER = [
     "hap_id",
     "locus_config",

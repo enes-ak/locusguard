@@ -8,7 +8,6 @@ import pytest
 from locusguard.api import Annotator
 from locusguard.config import load_config
 
-
 _SMN1_CFG_YAML = """
 schema_version: "1.0"
 locusguard_compat: ">=0.1.0,<1.0.0"

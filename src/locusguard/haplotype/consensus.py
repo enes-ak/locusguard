@@ -4,6 +4,9 @@ from __future__ import annotations
 from locusguard.config.schema import LocusConfig
 from locusguard.types import HaplotypeCluster
 
+# Gene conversion requires at least two candidate paralogs to compare against.
+_MIN_PARALOGS_FOR_GENE_CONV = 2
+
 
 def assign_cluster_locus(cluster: HaplotypeCluster, config: LocusConfig) -> None:
     """Assign a locus to a cluster based on PSV pattern agreement.
@@ -53,26 +56,10 @@ def detect_gene_conversion(cluster: HaplotypeCluster, config: LocusConfig) -> No
       configured known hotspot.
     """
     candidates = _candidate_loci(config)
-    if cluster.assigned_locus is None or len(candidates) < 2:
+    if cluster.assigned_locus is None or len(candidates) < _MIN_PARALOGS_FOR_GENE_CONV:
         return
 
-    mismatched_psv_names: list[str] = []
-    for psv in config.psvs:
-        observed = cluster.psv_pattern.get(psv.name)
-        if observed is None or observed == "?":
-            continue
-        expected_for_assigned = psv.alleles.get(cluster.assigned_locus)
-        if expected_for_assigned is None:
-            continue
-        if observed != expected_for_assigned:
-            # Does this observed base match any OTHER paralog's allele?
-            for other_locus in candidates:
-                if other_locus == cluster.assigned_locus:
-                    continue
-                if psv.alleles.get(other_locus) == observed:
-                    mismatched_psv_names.append(psv.name)
-                    break
-
+    mismatched_psv_names = _find_mismatched_psvs(cluster, config, candidates)
     if not mismatched_psv_names:
         return
 
@@ -93,6 +80,31 @@ def detect_gene_conversion(cluster: HaplotypeCluster, config: LocusConfig) -> No
             note = f"hotspot_match:{hotspot.name}"
             if note not in cluster.notes:
                 cluster.notes.append(note)
+
+
+def _find_mismatched_psvs(
+    cluster: HaplotypeCluster,
+    config: LocusConfig,
+    candidates: list[str],
+) -> list[str]:
+    """Return PSV names whose observed base matches a paralog other than the assigned locus."""
+    mismatched: list[str] = []
+    assigned = cluster.assigned_locus
+    for psv in config.psvs:
+        observed = cluster.psv_pattern.get(psv.name)
+        if observed is None or observed == "?":
+            continue
+        expected_for_assigned = psv.alleles.get(assigned) if assigned is not None else None
+        if expected_for_assigned is None or observed == expected_for_assigned:
+            continue
+        # Does this observed base match any OTHER paralog's allele?
+        for other_locus in candidates:
+            if other_locus == assigned:
+                continue
+            if psv.alleles.get(other_locus) == observed:
+                mismatched.append(psv.name)
+                break
+    return mismatched
 
 
 def _candidate_loci(config: LocusConfig) -> list[str]:

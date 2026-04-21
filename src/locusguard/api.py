@@ -28,6 +28,9 @@ from locusguard.io.fasta import FastaReader
 from locusguard.io.vcf import VcfReader
 from locusguard.preflight import run_preflight
 from locusguard.projection.vcf import LocusRegion, VcfProjector
+from locusguard.reporting.assignments_tsv import write_assignments_tsv
+from locusguard.reporting.haplotypes_tsv import write_haplotypes_tsv
+from locusguard.reporting.html_report import write_html_report
 from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
 from locusguard.types import Assignment, HaplotypeCluster
@@ -155,15 +158,12 @@ class Annotator:
             )
 
         if assignments_tsv_path is not None:
-            from locusguard.reporting.assignments_tsv import write_assignments_tsv
             write_assignments_tsv(assignments_tsv_path, assignments_by_locus)
 
         if haplotypes_tsv_path is not None:
-            from locusguard.reporting.haplotypes_tsv import write_haplotypes_tsv
             write_haplotypes_tsv(haplotypes_tsv_path, clusters_by_locus)
 
         if html_report_path is not None:
-            from locusguard.reporting.html_report import write_html_report
             gene_conv_flags, _ = self._derive_gene_conv_maps(clusters_by_locus)
             write_html_report(
                 output_path=html_report_path,

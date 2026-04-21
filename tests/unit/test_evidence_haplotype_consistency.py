@@ -4,7 +4,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.evidence.haplotype_consistency import HaplotypeConsistencyEvidence
 from locusguard.types import AnalyzedRead, PSVObs
 
-
 _MINIMAL = {
     "schema_version": "1.0",
     "locusguard_compat": ">=0.1.0,<1.0.0",

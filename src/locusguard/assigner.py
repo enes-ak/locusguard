@@ -14,6 +14,7 @@ import pysam
 
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import PSV, LocusConfig
+from locusguard.evidence.base import EvidenceSource, ReadTech
 from locusguard.evidence.haplotype_consistency import HaplotypeConsistencyEvidence
 from locusguard.evidence.mapq_pattern import MapqPatternEvidence
 from locusguard.evidence.psv import PSVEvidence
@@ -128,7 +129,7 @@ class LocusAssigner:
         )
         self._locus_key = self._compute_locus_key()
         self._psv_names = [p.name for p in config.psvs]
-        self._adapters = [
+        self._adapters: list[EvidenceSource] = [
             PSVEvidence(target_locus=config.locus.id),
             MapqPatternEvidence(),
             SoftclipEvidence(),
@@ -161,15 +162,22 @@ class LocusAssigner:
             for rid in cluster.supporting_reads:
                 read_to_cluster[rid] = cluster
         for read in reads:
-            cluster = read_to_cluster.get(read.read_id)
-            read.cluster_consensus = cluster.psv_pattern if cluster is not None else None
+            maybe_cluster = read_to_cluster.get(read.read_id)
+            read.cluster_consensus = (
+                maybe_cluster.psv_pattern if maybe_cluster is not None else None
+            )
 
-        tech = bam.detect_tech()
-        if tech == "unknown":
+        detected = bam.detect_tech()
+        tech: ReadTech
+        if detected == "ont":
+            tech = "ont"
+        elif detected == "short-read":
+            tech = "short-read"
+        else:
             tech = "ont" if reads and reads[0].is_long_read else "short-read"
         assignments: list[Assignment] = []
         for read in reads:
-            cluster = read_to_cluster.get(read.read_id)
+            read_cluster: HaplotypeCluster | None = read_to_cluster.get(read.read_id)
             evidences: list[EvidenceScore] = []
             for adapter in self._adapters:
                 if not adapter.supports(tech):
@@ -190,7 +198,7 @@ class LocusAssigner:
                 self._config.confidence_thresholds,
             )
             flags = set(flags)
-            if cluster is not None and "gene_conversion_suspected" in cluster.notes:
+            if read_cluster is not None and "gene_conversion_suspected" in read_cluster.notes:
                 flags.add("gene_conversion_suspected")
 
             assignments.append(
@@ -204,7 +212,7 @@ class LocusAssigner:
                     evidence_scores=evidences,
                     locus_key=self._locus_key,
                     flags=flags,
-                    cluster_id=cluster.hap_id if cluster is not None else None,
+                    cluster_id=read_cluster.hap_id if read_cluster is not None else None,
                 )
             )
         return assignments

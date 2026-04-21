@@ -11,7 +11,6 @@ from locusguard.config.schema import LocusConfig
 from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
-
 _MIN_OVERLAP = 2
 
 

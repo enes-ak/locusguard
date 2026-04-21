@@ -7,7 +7,6 @@ from locusguard.haplotype.consensus import (
 )
 from locusguard.types import HaplotypeCluster
 
-
 _CFG_DICT = {
     "schema_version": "1.0",
     "locusguard_compat": ">=0.1.0,<1.0.0",
