@@ -4,22 +4,23 @@ Caller-agnostic locus disambiguation engine for paralog and pseudogene regions �
 
 ## What it does
 
-LocusGuard annotates variants in problematic genomic regions (paralog genes, pseudogenes, segmental duplications) with the *true* locus of origin plus a confidence score, supported by multi-evidence scoring: PSV match, haplotype consistency, MAPQ pattern, soft-clip pattern, and gene-conversion detection. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
+LocusGuard annotates variants in problematic genomic regions with the *true* locus of origin plus a confidence score, supported by multi-evidence scoring (PSV match, haplotype consistency, MAPQ, soft-clip, coverage ratio) and reports absolute copy number per paralog. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
 
-Each annotated variant carries new INFO fields:
+Each annotated variant carries:
 
-- `TRUE_LOCUS` — assigned locus (e.g. `SMN1`)
+- `TRUE_LOCUS` — assigned locus
 - `LOCUS_CONF` — confidence in `[0, 1]`
 - `LOCUS_STATUS` — `RESOLVED` | `PROBABLE` | `AMBIGUOUS` | `UNASSIGNED`
 - `LOCUS_EVIDENCE` — per-source decomposition
 - `LOCUS_KEY` — cross-output traceability key
-- `GENE_CONVERSION_FLAG` — 1 if gene conversion suspected at this locus
+- `GENE_CONVERSION_FLAG` — 1 if gene conversion suspected
+- `CN_CONTEXT` — per-locus absolute copy number
 
 ## Status
 
-**Phase 2 (A-core).** Supported: SMN1/SMN2 on GRCh38. ONT + short-read inputs. Multi-evidence scoring with haplotype clustering and gene-conversion detection.
+**Phase 2.5.** Supported: SMN1/SMN2 on GRCh38. ONT input for CN estimation; short-read graceful with CN disabled. Multi-evidence scoring with haplotype clustering and gene-conversion detection. Control-region-normalized copy number.
 
-Not yet supported: GBA/PMS2 (Phase 3), BAM output (Phase 3), CN estimation, WES mode (Phase 2.5), packaging for Bioconda/Docker/nf-core (Phase 4).
+Not yet supported: WES mode (Phase 2.6), GBA/PMS2 (Phase 3), BAM output (Phase 3), packaging for Bioconda/Docker/nf-core (Phase 4).
 
 ## Install
 
@@ -27,7 +28,7 @@ Not yet supported: GBA/PMS2 (Phase 3), BAM output (Phase 3), CN estimation, WES 
 pip install git+https://github.com/enes-ak/locusguard.git
 ```
 
-Or from source (editable, for development):
+Or from source:
 
 ```bash
 git clone https://github.com/enes-ak/locusguard
@@ -53,12 +54,10 @@ locusguard annotate \
 
 Outputs:
 
-- `patient.lg.vcf.gz` — annotated VCF
-- `patient.lg.summary.json` — per-locus status, gene conversion flags, read counts
-- `patient.lg.manifest.json` — versions, config hashes, command, runtime, degradations
-- `patient.lg.report.html` — human-readable report (with `--emit-report`)
-- `patient.lg.assignments.tsv` (with `--emit-assignments`) — per-read detail
-- `patient.lg.haplotypes.tsv` (with `--emit-haplotypes`) — per-cluster detail
+- `patient.lg.vcf.gz` — annotated VCF (INFO fields including CN_CONTEXT)
+- `patient.lg.summary.json` — per-locus status + `cn_estimate` block
+- `patient.lg.manifest.json` — versions, config hashes, command, runtime, CN method + controls used
+- `patient.lg.report.html` — human-readable report with Copy Number panel
 
 ## Library use
 
@@ -67,10 +66,7 @@ from pathlib import Path
 from locusguard.api import Annotator
 from locusguard.config import load_config
 
-configs = [
-    load_config("/path/to/SMN1.yaml"),
-    load_config("/path/to/SMN2.yaml"),
-]
+configs = [load_config(p) for p in ["SMN1.yaml", "SMN2.yaml"]]
 annotator = Annotator(
     configs=configs,
     reference_fasta=Path("/refs/grch38.primary.fa"),
@@ -84,9 +80,9 @@ result = annotator.annotate_vcf(
     html_report_path=Path("patient.lg.report.html"),
 )
 
-# Phase 2 additions:
-for locus_id, clusters in result.haplotype_clusters_by_locus.items():
-    print(f"{locus_id}: {len(clusters)} haplotype cluster(s)")
+for locus_id, cn in result.cn_by_locus.items():
+    if cn.status == "ok":
+        print(f"{locus_id}: CN = {cn.absolute_cn_rounded} (est: {cn.absolute_cn:.2f})")
 ```
 
 ## License
