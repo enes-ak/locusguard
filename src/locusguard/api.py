@@ -127,6 +127,7 @@ class Annotator:
             )
 
         if manifest_path is not None:
+            degradations = self._collect_degradations(assignments_by_locus)
             write_manifest(
                 output_path=manifest_path,
                 locusguard_version=__version__,
@@ -139,6 +140,7 @@ class Annotator:
                 profile_used=self._profile_name,
                 runtime_seconds=round(runtime, 3),
                 warnings=warnings,
+                degradations=degradations,
             )
 
         return AnnotationResult(
@@ -146,6 +148,21 @@ class Annotator:
             variants_annotated=variants_annotated,
             assignments_by_locus=assignments_by_locus,
         )
+
+    def _collect_degradations(
+        self,
+        assignments_by_locus: dict[str, list[Assignment]],
+    ) -> list[dict[str, str]]:
+        """Summarize evidence adapters that were disabled or skipped."""
+        seen: dict[str, str] = {}
+        for assignments in assignments_by_locus.values():
+            for a in assignments:
+                for ev in a.evidence_scores:
+                    if ev.available:
+                        continue
+                    reason = ev.raw.get("reason", "unavailable")
+                    seen.setdefault(ev.source, str(reason))
+        return [{"evidence": k, "reason": v} for k, v in sorted(seen.items())]
 
 
 def _count_variants(
