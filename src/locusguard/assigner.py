@@ -164,7 +164,9 @@ class LocusAssigner:
             cluster = read_to_cluster.get(read.read_id)
             read.cluster_consensus = cluster.psv_pattern if cluster is not None else None
 
-        tech = "ont" if reads and reads[0].is_long_read else "short-read"
+        tech = bam.detect_tech()
+        if tech == "unknown":
+            tech = "ont" if reads and reads[0].is_long_read else "short-read"
         assignments: list[Assignment] = []
         for read in reads:
             cluster = read_to_cluster.get(read.read_id)
