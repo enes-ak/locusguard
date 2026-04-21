@@ -62,3 +62,21 @@ class Assignment:
     locus_key: str
     flags: set[str] = field(default_factory=set)
     cluster_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CnEstimate:
+    """Copy number estimate for a locus, derived by the CN estimator.
+
+    All numeric fields are nullable because estimation can fail gracefully
+    (insufficient depth, no control regions, unsupported tech).
+    """
+    locus_id: str
+    absolute_cn: float | None
+    absolute_cn_rounded: int | None
+    paralog_ratio: float | None
+    cn_total_family: float | None
+    method: str                        # control_region_normalized | insufficient_depth | no_control_regions | not_supported_for_tech
+    confidence: float                  # [0, 1]
+    status: str                        # ok | insufficient_depth | no_control_regions | not_supported_for_tech | method_disagreement
+    notes: list[str] = field(default_factory=list)
