@@ -72,3 +72,30 @@ def test_variant_outside_any_region_is_passed_through(mini_vcf, tmp_path):
     for v in variants:
         # INFO.get returns None for missing fields with cyvcf2
         assert v.INFO.get("TRUE_LOCUS") is None
+
+
+def test_projection_emits_gene_conversion_flag(mini_vcf, tmp_path):
+    out = tmp_path / "out.vcf.gz"
+    assignments = [
+        Assignment(
+            read_id=f"r{i}",
+            assigned_locus="SMN1",
+            confidence=0.70,
+            status="PROBABLE",
+            evidence_scores=[],
+            locus_key="SMN1:a3f9c2",
+            flags={"gene_conversion_suspected"},
+        )
+        for i in range(5)
+    ]
+    projector = VcfProjector(
+        input_vcf=mini_vcf,
+        output_vcf=out,
+        locus_regions=[("SMN1", "chr5", 12000, 15000)],
+    )
+    projector.run({"SMN1": assignments})
+
+    reader = VcfReader(out)
+    variants = list(reader.iter_variants())
+    smn1_variant = next(v for v in variants if v.POS == 13950)
+    assert int(smn1_variant.INFO.get("GENE_CONVERSION_FLAG")) == 1

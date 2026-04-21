@@ -20,6 +20,8 @@ _INFO_FIELDS = [
      "LocusGuard status: RESOLVED|PROBABLE|AMBIGUOUS|UNASSIGNED"),
     ("LOCUS_EVIDENCE", "1", "String", "LocusGuard evidence decomposition"),
     ("LOCUS_KEY", "1", "String", "LocusGuard locus key for cross-output linkage"),
+    ("GENE_CONVERSION_FLAG", "1", "Integer",
+     "1 if gene conversion suspected at this locus, 0 otherwise"),
 ]
 
 
@@ -78,6 +80,7 @@ class VcfProjector:
                     "LOCUS_STATUS": summary["dominant_status"],
                     "LOCUS_EVIDENCE": summary["evidence_summary"],
                     "LOCUS_KEY": summary["locus_key"],
+                    "GENE_CONVERSION_FLAG": summary["gene_conv_flag"],
                 }
         return {}
 
@@ -90,6 +93,7 @@ def _summarize(assignments: list[Assignment]) -> dict[str, object]:
             "dominant_status": "UNASSIGNED",
             "evidence_summary": "na",
             "locus_key": "",
+            "gene_conv_flag": 0,
         }
     status_counts = Counter(a.status for a in assignments)
     dominant_status = status_counts.most_common(1)[0][0]
@@ -98,12 +102,14 @@ def _summarize(assignments: list[Assignment]) -> dict[str, object]:
     best_locus = best_locus_counts.most_common(1)[0][0] if best_locus_counts else ""
     locus_key = assignments[0].locus_key
     evidence_summary = _format_evidence_summary(assignments)
+    gene_conv = any("gene_conversion_suspected" in a.flags for a in assignments)
     return {
         "best_locus": best_locus,
         "mean_conf": round(mean_conf, 4),
         "dominant_status": dominant_status,
         "evidence_summary": evidence_summary,
         "locus_key": locus_key,
+        "gene_conv_flag": 1 if gene_conv else 0,
     }
 
 
