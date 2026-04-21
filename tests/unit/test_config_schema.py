@@ -72,3 +72,21 @@ def test_missing_required_field_fails():
     bad = {k: v for k, v in MINIMAL_VALID_CONFIG.items() if k != "psvs"}
     with pytest.raises(ValidationError, match="psvs"):
         LocusConfig.model_validate(bad)
+
+
+def test_locus_config_supports_control_regions():
+    config_with_controls = {
+        **MINIMAL_VALID_CONFIG,
+        "control_regions": [
+            {"name": "chr5_singlecopy_A", "chrom": "chr5", "start": 85000000, "end": 85010000},
+            {"name": "chr5_singlecopy_B", "chrom": "chr5", "start": 90000000, "end": 90010000},
+        ],
+    }
+    cfg = LocusConfig.model_validate(config_with_controls)
+    assert len(cfg.control_regions) == 2
+    assert cfg.control_regions[0].name == "chr5_singlecopy_A"
+
+
+def test_locus_config_control_regions_optional_and_defaults_to_empty():
+    cfg = LocusConfig.model_validate(MINIMAL_VALID_CONFIG)
+    assert cfg.control_regions == []
