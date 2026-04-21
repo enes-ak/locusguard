@@ -56,6 +56,11 @@ gene_conversion:
   known_hotspots:
     - {name: exon_7_conversion, chrom: chr5, start: 70951900, end: 70952050}
 
+control_regions:
+  - {name: chr5_p_arm_12M, chrom: chr5, start: 12000000, end: 12005000}
+  - {name: chr5_mid_85M, chrom: chr5, start: 85000000, end: 85005000}
+  - {name: chr5_q_arm_130M, chrom: chr5, start: 130000000, end: 130005000}
+
 copy_number:
   expected_total: 4
   individual_range: [0, 4]
