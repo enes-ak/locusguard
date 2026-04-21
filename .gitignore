@@ -22,6 +22,9 @@ htmlcov/
 *.summary.json
 *.manifest.json
 *.locusguard.*
+*.assignments.tsv
+*.haplotypes.tsv
+*.report.html
 .venv/
 venv/
 .DS_Store
