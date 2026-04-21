@@ -26,6 +26,7 @@ dependencies = [
     "typer>=0.12",
     "rich>=13.7",
     "numpy>=1.26",
+    "jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -63,6 +64,8 @@ ignore = ["PLR0913"]  # too many arguments (common in CLI code)
 # Test conventions: magic numbers in assertions are idiomatic, conditional
 # imports / subprocess.run without check are fine in scoped helpers.
 "tests/**/*.py" = ["PLR2004", "PLC0415", "PLW1510"]
+# Inline Jinja2 template literal contains long CSS/HTML lines by design.
+"src/locusguard/reporting/html_report.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"
