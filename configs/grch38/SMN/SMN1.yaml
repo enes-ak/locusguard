@@ -16,7 +16,7 @@ coordinates:
     start: 70924941
     end: 70953012
   paralogs:
-    SMN2: {chrom: chr5, start: 69345350, end: 69373421}
+    SMN2: {chrom: chr5, start: 70049523, end: 70078522}
 
 critical_regions:
   - {name: exon_7, chrom: chr5, start: 70951941, end: 70952011, required_coverage: 15}

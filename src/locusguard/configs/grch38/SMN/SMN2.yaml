@@ -13,19 +13,19 @@ reference: grch38
 coordinates:
   primary:
     chrom: chr5
-    start: 69345350
-    end: 69373421
+    start: 70049523
+    end: 70078522
   paralogs:
     SMN1: {chrom: chr5, start: 70924941, end: 70953012}
 
 critical_regions:
-  - {name: exon_7, chrom: chr5, start: 69372304, end: 69372374, required_coverage: 15}
-  - {name: exon_8, chrom: chr5, start: 69372800, end: 69373421, required_coverage: 15}
+  - {name: exon_7, chrom: chr5, start: 70076500, end: 70076560, required_coverage: 15}
+  - {name: exon_8, chrom: chr5, start: 70077000, end: 70078522, required_coverage: 15}
 
 psvs:
   - name: "c.840C>T"
     chrom: chr5
-    pos: 69372353
+    pos: 70076526
     alleles: {SMN1: C, SMN2: T}
     exon: 7
     discriminating_power: high
