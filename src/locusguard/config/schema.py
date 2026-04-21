@@ -29,12 +29,15 @@ class Coordinates(BaseModel):
 
 
 class PSV(BaseModel):
-    """Paralog-Specific Variant — a position that distinguishes paralogs."""
+    """Paralog-Specific Variant — a position that distinguishes paralogs.
+
+    `pos` is 1-based (VCF / samtools / genomics literature convention).
+    """
     model_config = ConfigDict(extra="forbid")
 
     name: str
     chrom: str
-    pos: int = Field(ge=0)
+    pos: int = Field(ge=1, description="1-based reference position")
     alleles: dict[str, str]
     exon: int | None = None
     discriminating_power: Literal["low", "medium", "high"] = "high"

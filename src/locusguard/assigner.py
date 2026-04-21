@@ -58,7 +58,10 @@ def _analyze_read(
         if psv.chrom != read.reference_name:
             observations[psv.name] = PSVObs(base="N", qual=0, reach=False)
             continue
-        q_idx = ref_to_query.get(psv.pos)
+        # Config PSV positions use the 1-based genomics convention (matches VCF
+        # POS, literature, samtools). pysam's get_aligned_pairs returns 0-based
+        # reference coordinates, so convert.
+        q_idx = ref_to_query.get(psv.pos - 1)
         if q_idx is None:
             observations[psv.name] = PSVObs(base="N", qual=0, reach=False)
             continue

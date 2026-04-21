@@ -26,7 +26,7 @@ _FIXTURE_SMN1_CFG = {
         {
             "name": "c.840C>T",
             "chrom": "chr5",
-            "pos": 14000,
+            "pos": 14001,
             "alleles": {"SMN1": "C", "SMN2": "T"},
         },
     ],
@@ -60,7 +60,7 @@ _FIXTURE_SMN2_CFG = {
         {
             "name": "c.840C>T",
             "chrom": "chr5",
-            "pos": 4000,
+            "pos": 4001,
             "alleles": {"SMN1": "C", "SMN2": "T"},
         },
     ],
