@@ -60,3 +60,4 @@ class Assignment:
     evidence_scores: list[EvidenceScore]
     locus_key: str
     flags: set[str] = field(default_factory=set)
+    cluster_id: str | None = None

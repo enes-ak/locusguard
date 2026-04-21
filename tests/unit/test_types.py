@@ -85,3 +85,30 @@ def test_haplotype_cluster_supports_note_accumulation():
     )
     hc.notes.append("gene_conversion_suspected")
     assert "gene_conversion_suspected" in hc.notes
+
+
+def test_assignment_supports_optional_cluster_id():
+    a = Assignment(
+        read_id="r1",
+        assigned_locus="SMN1",
+        confidence=0.9,
+        status="RESOLVED",
+        evidence_scores=[],
+        locus_key="SMN1:abc",
+        flags=set(),
+        cluster_id="H1",
+    )
+    assert a.cluster_id == "H1"
+
+
+def test_assignment_cluster_id_defaults_to_none():
+    a = Assignment(
+        read_id="r1",
+        assigned_locus="SMN1",
+        confidence=0.9,
+        status="RESOLVED",
+        evidence_scores=[],
+        locus_key="SMN1:abc",
+        flags=set(),
+    )
+    assert a.cluster_id is None
