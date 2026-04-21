@@ -28,6 +28,7 @@ class AnalyzedRead:
     is_long_read: bool
     is_supplementary: bool
     original_mapq_zero: bool
+    cluster_consensus: dict[str, str] | None = None
 
 
 @dataclass(frozen=True, slots=True)
