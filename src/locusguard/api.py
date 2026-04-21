@@ -188,6 +188,7 @@ class Annotator:
                 gene_conv_flags_by_locus=gene_conv_flags,
                 warnings=warnings,
                 degradations=self._collect_degradations(assignments_by_locus),
+                cn_by_locus=cn_by_locus,
             )
 
         return AnnotationResult(

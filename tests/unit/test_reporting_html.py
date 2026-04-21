@@ -98,3 +98,47 @@ def test_html_renders_empty_locus(tmp_path):
     html = out.read_text()
     # Empty locus renders as UNASSIGNED status, no crash
     assert "SMN1" in html
+
+
+def test_html_includes_cn_panel_when_cn_provided(tmp_path):
+    from locusguard.reporting.html_report import write_html_report
+    from locusguard.types import Assignment, CnEstimate, EvidenceScore
+
+    out = tmp_path / "report.html"
+    write_html_report(
+        output_path=out,
+        sample_name="s",
+        reference="grch38",
+        tech="ont",
+        data_type="wgs",
+        runtime_seconds=1.0,
+        locusguard_version="0.2.5",
+        assignments_by_locus={
+            "SMN1": [Assignment(
+                read_id="r", assigned_locus="SMN1", confidence=0.95,
+                status="RESOLVED",
+                evidence_scores=[EvidenceScore(
+                    source="psv_match", normalized=0.95, raw={}, available=True,
+                )],
+                locus_key="SMN1:abc", flags=set(),
+            )],
+        },
+        clusters_by_locus={"SMN1": []},
+        variant_counts_by_locus={"SMN1": 1},
+        gene_conv_flags_by_locus={"SMN1": False},
+        warnings=[],
+        degradations=[],
+        cn_by_locus={
+            "SMN1": CnEstimate(
+                locus_id="SMN1", absolute_cn=2.05, absolute_cn_rounded=2,
+                paralog_ratio=2.0, cn_total_family=3.05,
+                method="control_region_normalized",
+                confidence=0.87, status="ok", notes=[],
+            ),
+        },
+    )
+    html = out.read_text()
+    assert "Copy Number" in html or "copy number" in html.lower()
+    assert "SMN1" in html
+    # The rounded CN value should appear prominently
+    assert "2" in html

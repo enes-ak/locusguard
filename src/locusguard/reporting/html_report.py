@@ -10,7 +10,7 @@ from pathlib import Path
 
 from jinja2 import Environment, select_autoescape
 
-from locusguard.types import Assignment, HaplotypeCluster
+from locusguard.types import Assignment, CnEstimate, HaplotypeCluster
 
 _TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -57,6 +57,19 @@ _TEMPLATE = """<!DOCTYPE html>
       <strong>Reads assigned:</strong> {{ summary.read_count }} ·
       <strong>Variants annotated:</strong> {{ summary.variants }}
     </p>
+
+    {% if summary.cn_status %}
+    <div class="cn-panel" style="margin-top: 0.8em; padding: 0.6em; background: #eef7ff; border-left: 4px solid #3b82f6; border-radius: 3px;">
+      <strong>Copy Number:</strong>
+      {% if summary.cn_status == "ok" %}
+        <span style="font-size: 1.2em; font-weight: bold;">{{ summary.cn_rounded }}</span>
+        (estimate: {{ '%.2f'|format(summary.cn_absolute) }}, confidence: {{ '%.2f'|format(summary.cn_confidence) }})
+        {% if summary.cn_paralog_ratio %} · paralog ratio: {{ '%.2f'|format(summary.cn_paralog_ratio) }}{% endif %}
+      {% else %}
+        <em>not available — {{ summary.cn_status }}</em>
+      {% endif %}
+    </div>
+    {% endif %}
 
     {% if summary.gene_conv_flag %}
     <div class="alert">
@@ -121,6 +134,7 @@ def write_html_report(
     gene_conv_flags_by_locus: dict[str, bool],
     warnings: list[str],
     degradations: list[dict[str, str]],
+    cn_by_locus: dict[str, CnEstimate] | None = None,
 ) -> None:
     env = Environment(autoescape=select_autoescape(["html"]))
     template = env.from_string(_TEMPLATE)
@@ -137,6 +151,7 @@ def write_html_report(
             for note in c.notes:
                 if note.startswith("hotspot_match:"):
                     hotspot_names.append(note.split(":", 1)[1])
+        cn_estimate = (cn_by_locus or {}).get(locus_id)
         locus_summaries[locus_id] = {
             "status": status,
             "mean_conf": mean_conf,
@@ -154,6 +169,11 @@ def write_html_report(
                 }
                 for c in clusters
             ],
+            "cn_rounded": cn_estimate.absolute_cn_rounded if cn_estimate else None,
+            "cn_absolute": cn_estimate.absolute_cn if cn_estimate else None,
+            "cn_confidence": cn_estimate.confidence if cn_estimate else None,
+            "cn_status": cn_estimate.status if cn_estimate else None,
+            "cn_paralog_ratio": cn_estimate.paralog_ratio if cn_estimate else None,
         }
 
     html = template.render(
