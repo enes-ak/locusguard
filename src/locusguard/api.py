@@ -141,6 +141,7 @@ class Annotator:
                 variant_counts_by_locus=counts_by_locus,
                 gene_conv_flags_by_locus=gene_conv_flags,
                 gene_conv_evidence_by_locus=gene_conv_evidence,
+                cn_by_locus=cn_by_locus,
             )
 
         if manifest_path is not None:

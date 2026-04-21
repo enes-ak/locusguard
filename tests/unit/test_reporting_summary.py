@@ -111,3 +111,62 @@ def test_summary_includes_gene_conv_flag(tmp_path):
     doc = json.loads(out.read_text())
     assert doc["loci"]["SMN1"]["gene_conv_flag"] is True
     assert "exon_7_conversion" in doc["loci"]["SMN1"]["gene_conv_evidence"]
+
+
+def test_summary_includes_cn_estimate_block(tmp_path):
+    import json
+
+    from locusguard.reporting.summary import write_summary
+    from locusguard.types import CnEstimate
+
+    out = tmp_path / "summary.json"
+    write_summary(
+        output_path=out,
+        sample_name="s",
+        reference="grch38",
+        tech="ont",
+        data_type="wgs",
+        runtime_seconds=1.0,
+        assignments_by_locus={"SMN1": [_make_assignment("SMN1", "RESOLVED", 0.9)]},
+        variant_counts_by_locus={"SMN1": 1},
+        cn_by_locus={
+            "SMN1": CnEstimate(
+                locus_id="SMN1",
+                absolute_cn=2.05,
+                absolute_cn_rounded=2,
+                paralog_ratio=2.0,
+                cn_total_family=3.05,
+                method="control_region_normalized",
+                confidence=0.87,
+                status="ok",
+                notes=["control:chr5_A"],
+            ),
+        },
+    )
+    doc = json.loads(out.read_text())
+    cn = doc["loci"]["SMN1"]["cn_estimate"]
+    assert cn["absolute_cn"] == 2.05
+    assert cn["absolute_cn_rounded"] == 2
+    assert cn["method"] == "control_region_normalized"
+    assert cn["status"] == "ok"
+
+
+def test_summary_cn_estimate_skipped_when_no_cn(tmp_path):
+    import json
+
+    from locusguard.reporting.summary import write_summary
+
+    out = tmp_path / "summary.json"
+    write_summary(
+        output_path=out,
+        sample_name="s",
+        reference="grch38",
+        tech="ont",
+        data_type="wgs",
+        runtime_seconds=1.0,
+        assignments_by_locus={"SMN1": [_make_assignment("SMN1", "RESOLVED", 0.9)]},
+        variant_counts_by_locus={"SMN1": 1},
+    )
+    doc = json.loads(out.read_text())
+    # CN block optional — absent when cn_by_locus not provided
+    assert "cn_estimate" not in doc["loci"]["SMN1"]
