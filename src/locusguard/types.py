@@ -76,7 +76,11 @@ class CnEstimate:
     absolute_cn_rounded: int | None
     paralog_ratio: float | None
     cn_total_family: float | None
-    method: str                        # control_region_normalized | insufficient_depth | no_control_regions | not_supported_for_tech
+    # method: control_region_normalized | insufficient_depth |
+    #         no_control_regions | not_supported_for_tech
+    method: str
     confidence: float                  # [0, 1]
-    status: str                        # ok | insufficient_depth | no_control_regions | not_supported_for_tech | method_disagreement
+    # status: ok | insufficient_depth | no_control_regions |
+    #         not_supported_for_tech | method_disagreement
+    status: str
     notes: list[str] = field(default_factory=list)

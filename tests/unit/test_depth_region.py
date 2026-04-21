@@ -36,6 +36,5 @@ def test_compute_region_depth_on_empty_region(smn_like_bam):
 
 def test_compute_region_depth_on_unknown_chrom(smn_like_bam):
     import pytest
-    with BamReader(smn_like_bam) as bam:
-        with pytest.raises((ValueError, KeyError)):
-            compute_region_depth(bam, "chrUnknown", 1, 100, "test")
+    with BamReader(smn_like_bam) as bam, pytest.raises((ValueError, KeyError)):
+        compute_region_depth(bam, "chrUnknown", 1, 100, "test")
