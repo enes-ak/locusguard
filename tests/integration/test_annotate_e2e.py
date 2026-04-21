@@ -119,6 +119,78 @@ confidence_thresholds: {resolved: 0.80, probable: 0.50}
     assert summary_doc["loci"]["SMN1"]["status"] == "RESOLVED"
     assert summary_doc["loci"]["SMN2"]["status"] == "RESOLVED"
 
+    # Phase 2: haplotype clusters are present in the summary
+    assert "gene_conv_flag" in summary_doc["loci"]["SMN1"]
+
+    # The haplotypes/assignments TSV are NOT emitted without flags — verify absence
+    base = output.name[: -len(".vcf.gz")]
+    assert not (tmp_path / f"{base}.assignments.tsv").exists()
+    assert not (tmp_path / f"{base}.haplotypes.tsv").exists()
+    assert not (tmp_path / f"{base}.report.html").exists()
+
+
+@pytest.mark.integration
+def test_annotate_cli_with_emit_flags(
+    tmp_path, smn_like_bam, smn_like_fasta, mini_vcf,
+):
+    import os
+    import subprocess
+
+    smn1_yaml = tmp_path / "smn1.yaml"
+    smn1_yaml.write_text("""
+schema_version: "1.0"
+locusguard_compat: ">=0.1.0,<1.0.0"
+locus: {id: SMN1, name: SMN1, gene_family: SMN, paralogs: [SMN2]}
+reference: grch38
+coordinates:
+  primary: {chrom: chr5, start: 12000, end: 15000}
+  paralogs:
+    SMN2: {chrom: chr5, start: 2000, end: 5000}
+psvs:
+  - name: "c.840C>T"
+    chrom: chr5
+    pos: 14001
+    alleles: {SMN1: C, SMN2: T}
+evidence_weights:
+  default:
+    psv_match: 0.40
+    haplotype_consistency: 0.25
+    mapq_pattern: 0.10
+    softclip: 0.05
+    unique_kmer: 0.10
+    coverage_ratio: 0.10
+  profile_overrides: {}
+confidence_thresholds: {resolved: 0.80, probable: 0.50}
+""")
+
+    output = tmp_path / "out.vcf.gz"
+    env = dict(os.environ)
+    env["LOCUSGUARD_GRCH38_FASTA"] = str(smn_like_fasta)
+
+    result = subprocess.run(
+        [
+            "locusguard", "annotate",
+            "--bam", str(smn_like_bam),
+            "--vcf", str(mini_vcf),
+            "--output", str(output),
+            "--reference", "grch38",
+            "--tech", "ont",
+            "--data-type", "wgs",
+            "--config", str(smn1_yaml),
+            "--emit-assignments",
+            "--emit-haplotypes",
+            "--emit-report",
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    assert (tmp_path / "out.assignments.tsv").exists()
+    assert (tmp_path / "out.haplotypes.tsv").exists()
+    assert (tmp_path / "out.report.html").exists()
+
 
 def _os_environ() -> dict[str, str]:
     import os
