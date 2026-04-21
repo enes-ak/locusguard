@@ -135,3 +135,146 @@ chr5\t13950\t.\tA\tG\t45\tPASS\t.\tGT\t0/1
     pysam.tabix_compress(str(raw), str(raw) + ".gz", force=True)
     pysam.tabix_index(str(raw) + ".gz", preset="vcf", force=True)
     return Path(str(raw) + ".gz")
+
+
+@pytest.fixture
+def multi_psv_fasta(tmp_path: Path) -> Path:
+    """A FASTA where SMN1 and SMN2 each have 3 PSVs at known offsets.
+
+    Layout (chr5):
+      SMN1-like: pos 12000..15000
+        PSV1 at 13000 = C (SMN1)
+        PSV2 at 13500 = A (SMN1)
+        PSV3 at 14000 = T (SMN1)
+      SMN2-like: pos 2000..5000
+        PSV1 at 3000 = T (SMN2)
+        PSV2 at 3500 = G (SMN2)
+        PSV3 at 4000 = A (SMN2)
+    """
+    path = tmp_path / "multi_psv.fa"
+    seq = list(_random_dna(MINI_LENGTH, seed=101))
+    # SMN1 PSVs
+    seq[13000 - 1] = "C"
+    seq[13500 - 1] = "A"
+    seq[14000 - 1] = "T"
+    # SMN2 PSVs
+    seq[3000 - 1] = "T"
+    seq[3500 - 1] = "G"
+    seq[4000 - 1] = "A"
+    with path.open("w") as fh:
+        fh.write(f">{MINI_CHROM}\n")
+        buf = "".join(seq)
+        for i in range(0, len(buf), 70):
+            fh.write(buf[i : i + 70] + "\n")
+    pysam.faidx(str(path))
+    return path
+
+
+@pytest.fixture
+def multi_psv_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
+    """A BAM with reads covering all 3 PSVs in each region."""
+    bam_path = tmp_path / "multi_psv.bam"
+    header = {
+        "HD": {"VN": "1.6", "SO": "coordinate"},
+        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
+        "RG": [{"ID": "rg1", "PL": "ONT", "SM": "s1"}],
+    }
+
+    def _write_read(bam, name: str, start: int, length: int, fasta: Path):
+        with pysam.FastaFile(str(fasta)) as fa:
+            seq = fa.fetch(MINI_CHROM, start, start + length).upper()
+        read = pysam.AlignedSegment()
+        read.query_name = name
+        read.query_sequence = seq
+        read.flag = 0
+        read.reference_id = 0
+        read.reference_start = start
+        read.mapping_quality = 60
+        read.cigar = [(0, length)]
+        read.query_qualities = pysam.qualitystring_to_array("I" * length)
+        read.set_tag("RG", "rg1")
+        bam.write(read)
+
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        for i in range(10):
+            _write_read(bam, f"smn1_read_{i}", 12500, 2000, multi_psv_fasta)
+        for i in range(10):
+            _write_read(bam, f"smn2_read_{i}", 2500, 2000, multi_psv_fasta)
+
+    pysam.sort("-o", str(bam_path), str(bam_path))
+    pysam.index(str(bam_path))
+    return bam_path
+
+
+@pytest.fixture
+def gene_conversion_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
+    """A BAM with 5 reads showing a mixed (gene-conversion-like) PSV pattern.
+
+    Reads span the SMN1 region but carry:
+      PSV1 at 13000 = 'T'  (SMN2-like)
+      PSV2 at 13500 = 'A'  (SMN1-like)
+      PSV3 at 14000 = 'T'  (SMN1-like)
+    Mixed pattern should trigger gene conversion detection.
+    """
+    bam_path = tmp_path / "gene_conv.bam"
+    header = {
+        "HD": {"VN": "1.6", "SO": "coordinate"},
+        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
+        "RG": [{"ID": "rg1", "PL": "ONT", "SM": "s1"}],
+    }
+    with pysam.FastaFile(str(multi_psv_fasta)) as fa:
+        base_seq = list(fa.fetch(MINI_CHROM, 12500, 14500).upper())
+    # Flip PSV1 (offset 500 within the slice) to T (SMN2-like)
+    base_seq[500] = "T"
+    synth_seq = "".join(base_seq)
+
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        for i in range(5):
+            read = pysam.AlignedSegment()
+            read.query_name = f"gc_read_{i}"
+            read.query_sequence = synth_seq
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = 12500
+            read.mapping_quality = 60
+            read.cigar = [(0, 2000)]
+            read.query_qualities = pysam.qualitystring_to_array("I" * 2000)
+            read.set_tag("RG", "rg1")
+            bam.write(read)
+    pysam.sort("-o", str(bam_path), str(bam_path))
+    pysam.index(str(bam_path))
+    return bam_path
+
+
+@pytest.fixture
+def short_read_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
+    """A short-read Illumina-style BAM over the SMN1 region."""
+    bam_path = tmp_path / "short.bam"
+    header = {
+        "HD": {"VN": "1.6", "SO": "coordinate"},
+        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
+        "RG": [{"ID": "rg1", "PL": "ILLUMINA", "SM": "s1"}],
+    }
+    with pysam.FastaFile(str(multi_psv_fasta)) as fa:
+        full = fa.fetch(MINI_CHROM, 12800, 14400).upper()
+
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        for i in range(20):
+            start = 12900 + (i * 50)
+            seq = full[start - 12800 : start - 12800 + 150]
+            if len(seq) < 150:
+                continue
+            read = pysam.AlignedSegment()
+            read.query_name = f"sr_{i}"
+            read.query_sequence = seq
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = start
+            read.mapping_quality = 40
+            read.cigar = [(0, 150)]
+            read.query_qualities = pysam.qualitystring_to_array("I" * 150)
+            read.set_tag("RG", "rg1")
+            bam.write(read)
+    pysam.sort("-o", str(bam_path), str(bam_path))
+    pysam.index(str(bam_path))
+    return bam_path
