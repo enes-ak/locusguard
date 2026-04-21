@@ -12,10 +12,16 @@ dist/
 htmlcov/
 *.bam
 *.bai
+*.vcf
 *.vcf.gz
 *.tbi
 *.fa
 *.fai
+
+# Local debug/test output artifacts
+*.summary.json
+*.manifest.json
+*.locusguard.*
 .venv/
 venv/
 .DS_Store
