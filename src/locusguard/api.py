@@ -113,10 +113,15 @@ class Annotator:
             for cfg in self._configs
         ]
 
+        cn_by_locus_floats: dict[str, float | None] = {
+            locus_id: cn.absolute_cn for locus_id, cn in cn_by_locus.items()
+        }
+
         projector = VcfProjector(
             input_vcf=vcf_in,
             output_vcf=vcf_out,
             locus_regions=locus_regions,
+            cn_by_locus=cn_by_locus_floats,
         )
         projector.run(assignments_by_locus)
 
