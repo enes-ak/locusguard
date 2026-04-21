@@ -47,6 +47,15 @@ def annotate(
         list[Path] | None,
         typer.Option("--config", help="Additional user locus config YAML (repeatable)."),
     ] = None,
+    emit_assignments: Annotated[
+        bool, typer.Option("--emit-assignments", help="Write per-read assignments TSV.")
+    ] = False,
+    emit_haplotypes: Annotated[
+        bool, typer.Option("--emit-haplotypes", help="Write per-cluster haplotypes TSV.")
+    ] = False,
+    emit_report: Annotated[
+        bool, typer.Option("--emit-report", help="Write human-readable HTML report.")
+    ] = False,
 ) -> None:
     """Post-calling VCF annotator (default LocusGuard mode).
 
@@ -90,6 +99,18 @@ def annotate(
         base = output.name[: -len(".vcf.gz")]
         summary_path = out_dir / f"{base}.summary.json"
         manifest_path = out_dir / f"{base}.manifest.json"
+    else:
+        base = output.stem
+
+    assignments_tsv_path = (
+        out_dir / f"{base}.assignments.tsv" if emit_assignments else None
+    )
+    haplotypes_tsv_path = (
+        out_dir / f"{base}.haplotypes.tsv" if emit_haplotypes else None
+    )
+    html_report_path = (
+        out_dir / f"{base}.report.html" if emit_report else None
+    )
 
     try:
         result = annotator.annotate_vcf(
@@ -98,6 +119,9 @@ def annotate(
             vcf_out=output,
             summary_path=summary_path,
             manifest_path=manifest_path,
+            assignments_tsv_path=assignments_tsv_path,
+            haplotypes_tsv_path=haplotypes_tsv_path,
+            html_report_path=html_report_path,
         )
     except PreflightError as e:
         console.print(f"[red]preflight error:[/red] {e}")

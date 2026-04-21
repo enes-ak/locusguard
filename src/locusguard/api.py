@@ -79,6 +79,9 @@ class Annotator:
         summary_path: Path | None = None,
         manifest_path: Path | None = None,
         sample_name: str | None = None,
+        assignments_tsv_path: Path | None = None,
+        haplotypes_tsv_path: Path | None = None,
+        html_report_path: Path | None = None,
     ) -> AnnotationResult:
         run_preflight(bam=bam, vcf=vcf_in, fasta=self._reference_fasta)
         start = time.perf_counter()
@@ -149,6 +152,33 @@ class Annotator:
                 runtime_seconds=round(runtime, 3),
                 warnings=warnings,
                 degradations=degradations,
+            )
+
+        if assignments_tsv_path is not None:
+            from locusguard.reporting.assignments_tsv import write_assignments_tsv
+            write_assignments_tsv(assignments_tsv_path, assignments_by_locus)
+
+        if haplotypes_tsv_path is not None:
+            from locusguard.reporting.haplotypes_tsv import write_haplotypes_tsv
+            write_haplotypes_tsv(haplotypes_tsv_path, clusters_by_locus)
+
+        if html_report_path is not None:
+            from locusguard.reporting.html_report import write_html_report
+            gene_conv_flags, _ = self._derive_gene_conv_maps(clusters_by_locus)
+            write_html_report(
+                output_path=html_report_path,
+                sample_name=sample_name or _infer_sample_name(vcf_in),
+                reference="grch38",
+                tech=self._tech,
+                data_type=self._data_type,
+                runtime_seconds=round(runtime, 3),
+                locusguard_version=__version__,
+                assignments_by_locus=assignments_by_locus,
+                clusters_by_locus=clusters_by_locus,
+                variant_counts_by_locus=counts_by_locus,
+                gene_conv_flags_by_locus=gene_conv_flags,
+                warnings=warnings,
+                degradations=self._collect_degradations(assignments_by_locus),
             )
 
         return AnnotationResult(
