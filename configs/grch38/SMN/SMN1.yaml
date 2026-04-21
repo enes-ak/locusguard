@@ -30,10 +30,27 @@ psvs:
     exon: 7
     discriminating_power: high
     notes: "Canonical SMN1/SMN2 exon 7 discriminator; verified against GRCh38.p0"
-  # TODO(phase2): re-add exon-8 PSVs (c.*3+80G>A, c.*239C>T) once their
-  # exact GRCh38 coordinates are re-verified against reference bases.
-  # Earlier approximate positions (70952612, 70952852) did not match the
-  # expected SMN1 alleles in real GRCh38.p0 FASTA lookups.
+  - name: "c.888+11A>G"
+    chrom: chr5
+    pos: 70952094
+    alleles: {SMN1: A, SMN2: G}
+    exon: 7
+    discriminating_power: high
+    notes: "Intron 7 PSV (~44bp past exon 7 end); verified via samtools faidx against GRCh38.p0"
+  - name: "intron7_PSV_70952209"
+    chrom: chr5
+    pos: 70952209
+    alleles: {SMN1: A, SMN2: G}
+    exon: 7
+    discriminating_power: high
+    notes: "Intron 7 PSV between exon 7 and exon 8; verified via samtools faidx against GRCh38.p0"
+  - name: "c.*239C>T"
+    chrom: chr5
+    pos: 70952674
+    alleles: {SMN1: G, SMN2: A}
+    exon: 8
+    discriminating_power: high
+    notes: "Exon 8 3'UTR PSV (+strand ref G/A = mRNA C/T, SMN is on minus strand); verified via samtools faidx against GRCh38.p0"
 
 gene_conversion:
   known_hotspots:

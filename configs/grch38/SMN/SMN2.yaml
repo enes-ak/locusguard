@@ -29,6 +29,28 @@ psvs:
     alleles: {SMN1: C, SMN2: T}
     exon: 7
     discriminating_power: high
+    notes: "Canonical SMN1/SMN2 exon 7 discriminator; verified against GRCh38.p0"
+  - name: "c.888+11A>G"
+    chrom: chr5
+    pos: 70076674
+    alleles: {SMN1: A, SMN2: G}
+    exon: 7
+    discriminating_power: high
+    notes: "Intron 7 PSV (SMN2-side mirror of SMN1 chr5:70952094); verified via samtools faidx against GRCh38.p0"
+  - name: "intron7_PSV_70076789"
+    chrom: chr5
+    pos: 70076789
+    alleles: {SMN1: A, SMN2: G}
+    exon: 7
+    discriminating_power: high
+    notes: "Intron 7 PSV (SMN2-side mirror of SMN1 chr5:70952209); verified via samtools faidx against GRCh38.p0"
+  - name: "c.*239C>T"
+    chrom: chr5
+    pos: 70077254
+    alleles: {SMN1: G, SMN2: A}
+    exon: 8
+    discriminating_power: high
+    notes: "Exon 8 3'UTR PSV (SMN2-side mirror of SMN1 chr5:70952674); verified via samtools faidx against GRCh38.p0"
 
 copy_number:
   expected_total: 4
