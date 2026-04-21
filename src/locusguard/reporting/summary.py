@@ -17,14 +17,23 @@ def write_summary(
     runtime_seconds: float,
     assignments_by_locus: dict[str, list[Assignment]],
     variant_counts_by_locus: dict[str, int],
+    gene_conv_flags_by_locus: dict[str, bool] | None = None,
+    gene_conv_evidence_by_locus: dict[str, str] | None = None,
 ) -> None:
+    gene_conv_flags_by_locus = gene_conv_flags_by_locus or {}
+    gene_conv_evidence_by_locus = gene_conv_evidence_by_locus or {}
+
     loci_block = {}
     for locus_id, assignments in assignments_by_locus.items():
-        loci_block[locus_id] = _per_locus_block(
+        block = _per_locus_block(
             locus_id=locus_id,
             assignments=assignments,
             variants_annotated=variant_counts_by_locus.get(locus_id, 0),
         )
+        block["gene_conv_flag"] = gene_conv_flags_by_locus.get(locus_id, False)
+        if locus_id in gene_conv_evidence_by_locus:
+            block["gene_conv_evidence"] = gene_conv_evidence_by_locus[locus_id]
+        loci_block[locus_id] = block
 
     doc = {
         "sample": sample_name,

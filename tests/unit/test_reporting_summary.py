@@ -86,3 +86,28 @@ def test_summary_reports_empty_locus(tmp_path):
     doc = json.loads(out.read_text())
     assert doc["loci"]["SMN1"]["status"] == "UNASSIGNED"
     assert doc["loci"]["SMN1"]["read_count"] == 0
+
+
+def test_summary_includes_gene_conv_flag(tmp_path):
+    import json
+
+    from locusguard.reporting.summary import write_summary
+
+    out = tmp_path / "summary.json"
+    write_summary(
+        output_path=out,
+        sample_name="s",
+        reference="grch38",
+        tech="ont",
+        data_type="wgs",
+        runtime_seconds=1.0,
+        assignments_by_locus={
+            "SMN1": [_make_assignment("SMN1", "PROBABLE", 0.65)],
+        },
+        variant_counts_by_locus={"SMN1": 1},
+        gene_conv_flags_by_locus={"SMN1": True},
+        gene_conv_evidence_by_locus={"SMN1": "mixed PSV pattern at hotspot:exon_7_conversion"},
+    )
+    doc = json.loads(out.read_text())
+    assert doc["loci"]["SMN1"]["gene_conv_flag"] is True
+    assert "exon_7_conversion" in doc["loci"]["SMN1"]["gene_conv_evidence"]

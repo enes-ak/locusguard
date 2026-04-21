@@ -30,7 +30,7 @@ from locusguard.preflight import run_preflight
 from locusguard.projection.vcf import LocusRegion, VcfProjector
 from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
-from locusguard.types import Assignment
+from locusguard.types import Assignment, HaplotypeCluster
 
 _TECH_DATATYPE_TO_PROFILE = {
     ("ont", "wgs"): "ont_wgs",
@@ -52,6 +52,7 @@ class AnnotationResult:
     variants_total: int
     variants_annotated: int
     assignments_by_locus: dict[str, list[Assignment]]
+    haplotype_clusters_by_locus: dict[str, list[HaplotypeCluster]]
 
 
 class Annotator:
@@ -83,6 +84,7 @@ class Annotator:
         start = time.perf_counter()
 
         assignments_by_locus: dict[str, list[Assignment]] = {}
+        clusters_by_locus: dict[str, list[HaplotypeCluster]] = {}
         warnings: list[str] = [_PHASE1_SCOPE_WARNING]
         with (
             BamReader(bam) as bam_reader,
@@ -93,6 +95,7 @@ class Annotator:
                 assignments_by_locus[cfg.locus.id] = assigner.assign(
                     bam_reader, fasta_reader,
                 )
+                clusters_by_locus[cfg.locus.id] = assigner.haplotype_clusters
                 warnings.extend(assigner.warnings)
 
         locus_regions: list[LocusRegion] = [
@@ -115,6 +118,9 @@ class Annotator:
         runtime = time.perf_counter() - start
 
         if summary_path is not None:
+            gene_conv_flags, gene_conv_evidence = self._derive_gene_conv_maps(
+                clusters_by_locus,
+            )
             write_summary(
                 output_path=summary_path,
                 sample_name=sample_name or _infer_sample_name(vcf_in),
@@ -124,6 +130,8 @@ class Annotator:
                 runtime_seconds=round(runtime, 3),
                 assignments_by_locus=assignments_by_locus,
                 variant_counts_by_locus=counts_by_locus,
+                gene_conv_flags_by_locus=gene_conv_flags,
+                gene_conv_evidence_by_locus=gene_conv_evidence,
             )
 
         if manifest_path is not None:
@@ -147,7 +155,28 @@ class Annotator:
             variants_total=variants_total,
             variants_annotated=variants_annotated,
             assignments_by_locus=assignments_by_locus,
+            haplotype_clusters_by_locus=clusters_by_locus,
         )
+
+    def _derive_gene_conv_maps(
+        self,
+        clusters_by_locus: dict[str, list[HaplotypeCluster]],
+    ) -> tuple[dict[str, bool], dict[str, str]]:
+        flags: dict[str, bool] = {}
+        evidence: dict[str, str] = {}
+        for locus_id, clusters in clusters_by_locus.items():
+            hits = [c for c in clusters if "gene_conversion_suspected" in c.notes]
+            flags[locus_id] = bool(hits)
+            if hits:
+                parts = []
+                for c in hits:
+                    hotspots = [n for n in c.notes if n.startswith("hotspot_match:")]
+                    suffix = f" at {','.join(hotspots)}" if hotspots else ""
+                    parts.append(
+                        f"cluster {c.hap_id} ({len(c.supporting_reads)} reads){suffix}"
+                    )
+                evidence[locus_id] = "; ".join(parts)
+        return flags, evidence
 
     def _collect_degradations(
         self,
