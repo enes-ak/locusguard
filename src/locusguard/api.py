@@ -151,6 +151,7 @@ class Annotator:
 
         if manifest_path is not None:
             degradations = self._collect_degradations(assignments_by_locus)
+            cn_method, cn_controls_used = self._derive_cn_metadata(cn_by_locus)
             write_manifest(
                 output_path=manifest_path,
                 locusguard_version=__version__,
@@ -164,6 +165,8 @@ class Annotator:
                 runtime_seconds=round(runtime, 3),
                 warnings=warnings,
                 degradations=degradations,
+                cn_method=cn_method,
+                cn_controls_used=cn_controls_used,
             )
 
         if assignments_tsv_path is not None:
@@ -218,6 +221,26 @@ class Annotator:
                     )
                 evidence[locus_id] = "; ".join(parts)
         return flags, evidence
+
+    def _derive_cn_metadata(
+        self,
+        cn_by_locus: dict[str, CnEstimate],
+    ) -> tuple[str | None, dict[str, list[str]]]:
+        """Summarize CN estimation metadata for manifest."""
+        if not cn_by_locus:
+            return None, {}
+        methods = {cn.method for cn in cn_by_locus.values()}
+        # If all loci agreed on a single method, report that; else "mixed"
+        cn_method = next(iter(methods)) if len(methods) == 1 else "mixed"
+        controls_used = {
+            locus_id: [
+                n.removeprefix("control:")
+                for n in cn.notes
+                if n.startswith("control:")
+            ]
+            for locus_id, cn in cn_by_locus.items()
+        }
+        return cn_method, controls_used
 
     def _collect_degradations(
         self,

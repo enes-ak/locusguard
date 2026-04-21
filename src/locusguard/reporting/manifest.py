@@ -19,6 +19,8 @@ def write_manifest(
     runtime_seconds: float,
     warnings: list[str],
     degradations: list[dict[str, str]] | None = None,
+    cn_method: str | None = None,
+    cn_controls_used: dict[str, list[str]] | None = None,
 ) -> None:
     doc = {
         "locusguard_version": locusguard_version,
@@ -35,5 +37,7 @@ def write_manifest(
         "runtime_sec": runtime_seconds,
         "warnings": warnings,
         "degradations": degradations or [],
+        "cn_method": cn_method,
+        "cn_controls_used": cn_controls_used or {},
     }
     output_path.write_text(json.dumps(doc, indent=2, sort_keys=True))
