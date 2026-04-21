@@ -29,19 +29,11 @@ psvs:
     alleles: {SMN1: C, SMN2: T}
     exon: 7
     discriminating_power: high
-    notes: "Canonical SMN1/SMN2 exon 7 discriminator"
-  - name: "c.*3+80G>A"
-    chrom: chr5
-    pos: 70952612
-    alleles: {SMN1: G, SMN2: A}
-    exon: 8
-    discriminating_power: high
-  - name: "c.*239C>T"
-    chrom: chr5
-    pos: 70952852
-    alleles: {SMN1: C, SMN2: T}
-    exon: 8
-    discriminating_power: medium
+    notes: "Canonical SMN1/SMN2 exon 7 discriminator; verified against GRCh38.p0"
+  # TODO(phase2): re-add exon-8 PSVs (c.*3+80G>A, c.*239C>T) once their
+  # exact GRCh38 coordinates are re-verified against reference bases.
+  # Earlier approximate positions (70952612, 70952852) did not match the
+  # expected SMN1 alleles in real GRCh38.p0 FASTA lookups.
 
 gene_conversion:
   known_hotspots:
