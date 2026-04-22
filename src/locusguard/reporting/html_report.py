@@ -58,15 +58,17 @@ _TEMPLATE = """<!DOCTYPE html>
       <strong>Variants annotated:</strong> {{ summary.variants }}
     </p>
 
-    {% if summary.cn_status %}
-    <div class="cn-panel" style="margin-top: 0.8em; padding: 0.6em; background: #eef7ff; border-left: 4px solid #3b82f6; border-radius: 3px;">
-      <strong>Copy Number:</strong>
-      {% if summary.cn_status == "ok" %}
-        <span style="font-size: 1.2em; font-weight: bold;">{{ summary.cn_rounded }}</span>
-        (estimate: {{ '%.2f'|format(summary.cn_absolute) }}, confidence: {{ '%.2f'|format(summary.cn_confidence) }})
-        {% if summary.cn_paralog_ratio %} · paralog ratio: {{ '%.2f'|format(summary.cn_paralog_ratio) }}{% endif %}
-      {% else %}
-        <em>not available — {{ summary.cn_status }}</em>
+    {% if summary.deletion_status %}
+    {% set _ds = summary.deletion_status %}
+    {% set _bg = {'PRESENT': '#ecfdf5', 'HOMOZYGOUS_DELETION': '#fef2f2', 'INDETERMINATE': '#fffbeb'}[_ds] %}
+    {% set _border = {'PRESENT': '#10b981', 'HOMOZYGOUS_DELETION': '#ef4444', 'INDETERMINATE': '#f59e0b'}[_ds] %}
+    <div class="deletion-panel" style="margin-top: 0.8em; padding: 0.6em; background: {{ _bg }}; border-left: 4px solid {{ _border }}; border-radius: 3px;">
+      <strong>Deletion Status:</strong>
+      <span style="font-size: 1.1em; font-weight: bold; margin-left: 0.4em;">{{ _ds }}</span>
+      {% if _ds == 'HOMOZYGOUS_DELETION' %}
+        <span style="font-style: italic; margin-left: 0.6em;">no confident read assignment — target paralog likely absent</span>
+      {% elif _ds == 'INDETERMINATE' %}
+        <span style="font-style: italic; margin-left: 0.6em;">too few reads evaluated for a reliable call</span>
       {% endif %}
     </div>
     {% endif %}
@@ -136,6 +138,10 @@ def write_html_report(
     degradations: list[dict[str, str]],
     cn_by_locus: dict[str, CnEstimate] | None = None,
 ) -> None:
+    from locusguard.deletion import (  # noqa: PLC0415
+        classify_deletion,
+    )
+
     env = Environment(autoescape=select_autoescape(["html"]))
     template = env.from_string(_TEMPLATE)
 
@@ -151,7 +157,6 @@ def write_html_report(
             for note in c.notes:
                 if note.startswith("hotspot_match:"):
                     hotspot_names.append(note.split(":", 1)[1])
-        cn_estimate = (cn_by_locus or {}).get(locus_id)
         locus_summaries[locus_id] = {
             "status": status,
             "mean_conf": mean_conf,
@@ -169,11 +174,7 @@ def write_html_report(
                 }
                 for c in clusters
             ],
-            "cn_rounded": cn_estimate.absolute_cn_rounded if cn_estimate else None,
-            "cn_absolute": cn_estimate.absolute_cn if cn_estimate else None,
-            "cn_confidence": cn_estimate.confidence if cn_estimate else None,
-            "cn_status": cn_estimate.status if cn_estimate else None,
-            "cn_paralog_ratio": cn_estimate.paralog_ratio if cn_estimate else None,
+            "deletion_status": classify_deletion(assignments),
         }
 
     html = template.render(

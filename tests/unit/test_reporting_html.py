@@ -1,3 +1,5 @@
+import pytest
+
 from locusguard.reporting.html_report import write_html_report
 from locusguard.types import Assignment, EvidenceScore, HaplotypeCluster
 
@@ -100,6 +102,7 @@ def test_html_renders_empty_locus(tmp_path):
     assert "SMN1" in html
 
 
+@pytest.mark.skip(reason="CN panel removed in Phase 2.6-alt Task 5; deletion panel covers replacement")  # noqa: E501
 def test_html_includes_cn_panel_when_cn_provided(tmp_path):
     from locusguard.reporting.html_report import write_html_report
     from locusguard.types import Assignment, CnEstimate, EvidenceScore
@@ -142,3 +145,59 @@ def test_html_includes_cn_panel_when_cn_provided(tmp_path):
     assert "SMN1" in html
     # The rounded CN value should appear prominently
     assert "2" in html
+
+
+def test_html_report_shows_deletion_status_present(tmp_path):
+    """Present loci render a green PRESENT badge in the Deletion Status panel."""
+    from locusguard.reporting.html_report import write_html_report
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus="SMN1", confidence=0.9,
+            status="RESOLVED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(12)
+    ]
+    out = tmp_path / "r.html"
+    write_html_report(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        locusguard_version="test",
+        assignments_by_locus={"SMN1": assignments},
+        clusters_by_locus={"SMN1": []},
+        variant_counts_by_locus={"SMN1": 0},
+        gene_conv_flags_by_locus={"SMN1": False},
+        warnings=[],
+        degradations=[],
+    )
+    html = out.read_text()
+    assert "Deletion Status" in html
+    assert "PRESENT" in html
+
+
+def test_html_report_shows_deletion_status_homozygous(tmp_path):
+    from locusguard.reporting.html_report import write_html_report
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus=None, confidence=0.2,
+            status="UNASSIGNED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(15)
+    ]
+    out = tmp_path / "r.html"
+    write_html_report(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        locusguard_version="test",
+        assignments_by_locus={"SMN1": assignments},
+        clusters_by_locus={"SMN1": []},
+        variant_counts_by_locus={"SMN1": 0},
+        gene_conv_flags_by_locus={"SMN1": False},
+        warnings=[],
+        degradations=[],
+    )
+    html = out.read_text()
+    assert "HOMOZYGOUS_DELETION" in html
