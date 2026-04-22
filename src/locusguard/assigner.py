@@ -180,7 +180,7 @@ class LocusAssigner:
         else:
             tech = "ont" if reads and reads[0].is_long_read else "short-read"
 
-        # Depth preflight pass: measure depth of primary + paralog + control regions
+        # Depth preflight pass: measure depth of primary + paralog regions
         depths_by_name = self._measure_depths(bam)
 
         # Build depths_by_locus keyed by locus IDs (for coverage_ratio adapter)
@@ -245,7 +245,7 @@ class LocusAssigner:
         return assignments
 
     def _measure_depths(self, bam: BamReader) -> dict[str, DepthStats]:
-        """Measure depth for primary + paralog + control regions.
+        """Measure depth for primary + paralog regions.
 
         Regions whose coordinates fall entirely outside the BAM's configured
         contig range (e.g. synthetic test BAMs that don't span full GRCh38)

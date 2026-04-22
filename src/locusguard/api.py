@@ -44,8 +44,7 @@ _TECH_DATATYPE_TO_PROFILE = {
 
 _PHASE2_5_SCOPE_WARNING = (
     "Phase 2.5 release: PSV match, haplotype consistency, MAPQ pattern, "
-    "soft-clip, and coverage-ratio evidence adapters are active, plus "
-    "control-region-normalized copy number estimation for ONT WGS. "
+    "soft-clip, and coverage-ratio evidence adapters are active. "
     "Unique-k-mer adapter and WES mode (--capture-bed) ship in Phase 2.6."
 )
 
