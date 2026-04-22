@@ -121,6 +121,62 @@ def _read_sequence_for(fasta: Path, chrom: str, start: int, end: int) -> str:
 
 
 @pytest.fixture
+def smn1_deleted_bam(tmp_path: Path, smn_like_fasta: Path) -> Path:
+    """A BAM simulating a homozygous SMN1 deletion.
+
+    15 reads span the SMN1 PSV region (ref pos ~14001) but carry the SMN2
+    base (T) at the PSV position — simulating the clinical case where SMN1
+    is deleted and SMN2 reads have been misaligned onto the SMN1 locus by
+    the aligner. 10 normal SMN2 reads cover the SMN2 PSV region.
+
+    With 15 reads all carrying the wrong PSV base, the SMN1 LocusAssigner
+    should UNASSIGN every one of them (PSV mismatch → no confident
+    SMN1-evidence), and ``classify_deletion`` should return
+    ``HOMOZYGOUS_DELETION``.
+    """
+    bam_path = tmp_path / "smn1_deleted.bam"
+    header = {
+        "HD": {"VN": "1.6", "SO": "coordinate"},
+        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
+    }
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        # 15 reads in SMN1 region (ref 13001-15000) with SMN2 PSV base (T) at 14001
+        for i in range(15):
+            read = pysam.AlignedSegment()
+            read.query_name = f"smn1_deleted_read_{i}"
+            seq = _read_sequence_for(smn_like_fasta, "chr5", 13000, 15000)
+            # Offset of PSV pos 14001 (1-based) within sequence that starts at
+            # ref pos 13001 (1-based) is 14001 - 13001 = 1000.
+            # Replace that base with T (the SMN2 allele).
+            seq = seq[:1000] + "T" + seq[1001:]
+            read.query_sequence = seq
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = 13000
+            read.mapping_quality = 60
+            read.cigar = [(0, 2000)]  # 2000M
+            read.query_qualities = pysam.qualitystring_to_array("I" * 2000)
+            bam.write(read)
+
+        # 10 reads in SMN2 region (ref 3001-5000) — normal SMN2 coverage
+        for i in range(10):
+            read = pysam.AlignedSegment()
+            read.query_name = f"smn2_read_{i}"
+            read.query_sequence = _read_sequence_for(smn_like_fasta, "chr5", 3000, 5000)
+            read.flag = 0
+            read.reference_id = 0
+            read.reference_start = 3000
+            read.mapping_quality = 60
+            read.cigar = [(0, 2000)]
+            read.query_qualities = pysam.qualitystring_to_array("I" * 2000)
+            bam.write(read)
+
+    pysam.sort("-o", str(bam_path), str(bam_path))
+    pysam.index(str(bam_path))
+    return bam_path
+
+
+@pytest.fixture
 def mini_vcf(tmp_path: Path) -> Path:
     """A gzipped, tabix-indexed VCF with two variants - one in SMN1 region, one in SMN2."""
     vcf_text = """##fileformat=VCFv4.2
