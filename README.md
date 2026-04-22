@@ -4,7 +4,7 @@ Caller-agnostic locus disambiguation engine for paralog and pseudogene regions â
 
 ## What it does
 
-LocusGuard annotates variants in problematic genomic regions with the *true* locus of origin plus a confidence score, supported by multi-evidence scoring (PSV match, haplotype consistency, MAPQ, soft-clip, coverage ratio) and reports homozygous-deletion status per paralog in the summary JSON. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
+LocusGuard annotates variants in problematic genomic regions with the *true* locus of origin plus a confidence score, supported by multi-evidence scoring (PSV match, haplotype consistency, MAPQ pattern, soft-clip, coverage ratio) and reports homozygous-deletion status per paralog in the summary JSON. It does **not** call variants; it augments the output of your existing caller (Clair3, DeepVariant, etc.).
 
 Each annotated variant carries:
 
