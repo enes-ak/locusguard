@@ -64,30 +64,10 @@ class CriticalRegion(BaseModel):
     required_coverage: int = 10
 
 
-class ControlRegion(BaseModel):
-    """A genomic region assumed to be single-copy, used to normalize CN.
-
-    Named so users can trace which control was used via manifest."""
-    model_config = ConfigDict(extra="forbid")
-
-    name: str
-    chrom: str
-    start: int = Field(ge=1)
-    end: int = Field(ge=1)
-
-
 class GeneConversion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     known_hotspots: list[CriticalRegion] = Field(default_factory=list)
-
-
-class CopyNumber(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    expected_total: int | None = None
-    individual_range: tuple[int, int] | None = None
-    estimation_method: str = "depth_ratio"
 
 
 class EvidenceWeights(BaseModel):
@@ -174,11 +154,9 @@ class LocusConfig(BaseModel):
     reference: str
     coordinates: Coordinates
     critical_regions: list[CriticalRegion] = Field(default_factory=list)
-    control_regions: list[ControlRegion] = Field(default_factory=list)
     psvs: list[PSV]
     unique_kmers: dict[str, Any] | None = None
     gene_conversion: GeneConversion | None = None
-    copy_number: CopyNumber | None = None
     evidence_weights: ProfiledWeights
     confidence_thresholds: Thresholds
     warnings: list[WarningRule] = Field(default_factory=list)
