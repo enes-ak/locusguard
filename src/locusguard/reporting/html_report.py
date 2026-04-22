@@ -10,6 +10,7 @@ from pathlib import Path
 
 from jinja2 import Environment, select_autoescape
 
+from locusguard.deletion import classify_deletion
 from locusguard.types import Assignment, CnEstimate, HaplotypeCluster
 
 _TEMPLATE = """<!DOCTYPE html>
@@ -138,10 +139,6 @@ def write_html_report(
     degradations: list[dict[str, str]],
     cn_by_locus: dict[str, CnEstimate] | None = None,
 ) -> None:
-    from locusguard.deletion import (  # noqa: PLC0415
-        classify_deletion,
-    )
-
     env = Environment(autoescape=select_autoescape(["html"]))
     template = env.from_string(_TEMPLATE)
 
