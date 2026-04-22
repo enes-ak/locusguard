@@ -154,3 +154,33 @@ def test_html_report_shows_deletion_status_homozygous(tmp_path):
     )
     html = out.read_text()
     assert "HOMOZYGOUS_DELETION" in html
+
+
+def test_html_report_shows_deletion_status_indeterminate(tmp_path):
+    """Indeterminate loci render the amber badge and the 'too few reads' note."""
+    from locusguard.reporting.html_report import write_html_report
+    from locusguard.types import Assignment
+
+    # Fewer than 10 assignments → INDETERMINATE
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus="SMN1", confidence=0.9,
+            status="RESOLVED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(5)
+    ]
+    out = tmp_path / "r.html"
+    write_html_report(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        locusguard_version="test",
+        assignments_by_locus={"SMN1": assignments},
+        clusters_by_locus={"SMN1": []},
+        variant_counts_by_locus={"SMN1": 0},
+        gene_conv_flags_by_locus={"SMN1": False},
+        warnings=[],
+        degradations=[],
+    )
+    html = out.read_text()
+    assert "INDETERMINATE" in html
+    assert "too few reads evaluated" in html

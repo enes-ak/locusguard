@@ -70,7 +70,7 @@ evidence_weights:
       haplotype_consistency: 0.30
       coverage_ratio: 0.10
       cap_confidence: 1.0
-      enable: [long_haplotype, multi_psv_phasing, cn_estimation]
+      enable: [long_haplotype, multi_psv_phasing]
     short_read_wgs:
       psv_match: 0.45
       haplotype_consistency: 0.20
@@ -82,15 +82,13 @@ evidence_weights:
       haplotype_consistency: 0.15
       softclip: 0.15
       cap_confidence: 0.85
-      disable: [coverage_ratio, long_haplotype, multi_psv_phasing, cn_estimation]
+      disable: [coverage_ratio, long_haplotype, multi_psv_phasing]
 
 confidence_thresholds:
   resolved: 0.80
   probable: 0.50
 
 warnings:
-  - profile: short_read_wes
-    always: "CN estimation disabled for WES; use MLPA for clinical CN calls"
   - condition: "gene_conversion_flag == true"
     message: "Gene conversion detected; orthogonal validation recommended"
 
