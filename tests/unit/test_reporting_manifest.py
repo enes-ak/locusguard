@@ -56,28 +56,4 @@ def test_manifest_includes_degradations_list(tmp_path):
     ]
 
 
-def test_manifest_includes_cn_metadata(tmp_path):
-    import json
 
-    from locusguard.reporting.manifest import write_manifest
-
-    out = tmp_path / "manifest.json"
-    write_manifest(
-        output_path=out,
-        locusguard_version="0.2.5",
-        command_line="annotate ...",
-        reference_fasta_path="/refs/grch38.fa",
-        reference_fasta_md5="abc",
-        config_hashes={"SMN1": "sha256:x"},
-        tech="ont",
-        data_type="wgs",
-        profile_used="ont_wgs",
-        runtime_seconds=1.0,
-        warnings=[],
-        degradations=[],
-        cn_method="control_region_normalized",
-        cn_controls_used={"SMN1": ["chr5_control_A", "chr5_control_B"]},
-    )
-    doc = json.loads(out.read_text())
-    assert doc["cn_method"] == "control_region_normalized"
-    assert doc["cn_controls_used"]["SMN1"] == ["chr5_control_A", "chr5_control_B"]

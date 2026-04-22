@@ -11,7 +11,7 @@ from pathlib import Path
 from jinja2 import Environment, select_autoescape
 
 from locusguard.deletion import classify_deletion
-from locusguard.types import Assignment, CnEstimate, HaplotypeCluster
+from locusguard.types import Assignment, HaplotypeCluster
 
 _TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -137,7 +137,6 @@ def write_html_report(
     gene_conv_flags_by_locus: dict[str, bool],
     warnings: list[str],
     degradations: list[dict[str, str]],
-    cn_by_locus: dict[str, CnEstimate] | None = None,
 ) -> None:
     env = Environment(autoescape=select_autoescape(["html"]))
     template = env.from_string(_TEMPLATE)

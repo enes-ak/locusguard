@@ -33,7 +33,7 @@ from locusguard.reporting.haplotypes_tsv import write_haplotypes_tsv
 from locusguard.reporting.html_report import write_html_report
 from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
-from locusguard.types import Assignment, CnEstimate, HaplotypeCluster
+from locusguard.types import Assignment, HaplotypeCluster
 
 _TECH_DATATYPE_TO_PROFILE = {
     ("ont", "wgs"): "ont_wgs",
@@ -56,7 +56,6 @@ class AnnotationResult:
     variants_annotated: int
     assignments_by_locus: dict[str, list[Assignment]]
     haplotype_clusters_by_locus: dict[str, list[HaplotypeCluster]]
-    cn_by_locus: dict[str, CnEstimate]
 
 
 class Annotator:
@@ -92,7 +91,6 @@ class Annotator:
 
         assignments_by_locus: dict[str, list[Assignment]] = {}
         clusters_by_locus: dict[str, list[HaplotypeCluster]] = {}
-        cn_by_locus: dict[str, CnEstimate] = {}
         warnings: list[str] = [_PHASE2_5_SCOPE_WARNING]
         with (
             BamReader(bam) as bam_reader,
@@ -104,8 +102,6 @@ class Annotator:
                     bam_reader, fasta_reader,
                 )
                 clusters_by_locus[cfg.locus.id] = assigner.haplotype_clusters
-                if assigner.cn_estimate is not None:
-                    cn_by_locus[cfg.locus.id] = assigner.cn_estimate
                 warnings.extend(assigner.warnings)
 
         locus_regions: list[LocusRegion] = [
@@ -114,15 +110,10 @@ class Annotator:
             for cfg in self._configs
         ]
 
-        cn_by_locus_floats: dict[str, float | None] = {
-            locus_id: cn.absolute_cn for locus_id, cn in cn_by_locus.items()
-        }
-
         projector = VcfProjector(
             input_vcf=vcf_in,
             output_vcf=vcf_out,
             locus_regions=locus_regions,
-            cn_by_locus=cn_by_locus_floats,
         )
         projector.run(assignments_by_locus)
 
@@ -147,12 +138,10 @@ class Annotator:
                 variant_counts_by_locus=counts_by_locus,
                 gene_conv_flags_by_locus=gene_conv_flags,
                 gene_conv_evidence_by_locus=gene_conv_evidence,
-                cn_by_locus=cn_by_locus,
             )
 
         if manifest_path is not None:
             degradations = self._collect_degradations(assignments_by_locus)
-            cn_method, cn_controls_used = self._derive_cn_metadata(cn_by_locus)
             write_manifest(
                 output_path=manifest_path,
                 locusguard_version=__version__,
@@ -166,8 +155,6 @@ class Annotator:
                 runtime_seconds=round(runtime, 3),
                 warnings=warnings,
                 degradations=degradations,
-                cn_method=cn_method,
-                cn_controls_used=cn_controls_used,
             )
 
         if assignments_tsv_path is not None:
@@ -192,7 +179,6 @@ class Annotator:
                 gene_conv_flags_by_locus=gene_conv_flags,
                 warnings=warnings,
                 degradations=self._collect_degradations(assignments_by_locus),
-                cn_by_locus=cn_by_locus,
             )
 
         return AnnotationResult(
@@ -200,7 +186,6 @@ class Annotator:
             variants_annotated=variants_annotated,
             assignments_by_locus=assignments_by_locus,
             haplotype_clusters_by_locus=clusters_by_locus,
-            cn_by_locus=cn_by_locus,
         )
 
     def _derive_gene_conv_maps(
@@ -222,26 +207,6 @@ class Annotator:
                     )
                 evidence[locus_id] = "; ".join(parts)
         return flags, evidence
-
-    def _derive_cn_metadata(
-        self,
-        cn_by_locus: dict[str, CnEstimate],
-    ) -> tuple[str | None, dict[str, list[str]]]:
-        """Summarize CN estimation metadata for manifest."""
-        if not cn_by_locus:
-            return None, {}
-        methods = {cn.method for cn in cn_by_locus.values()}
-        # If all loci agreed on a single method, report that; else "mixed"
-        cn_method = next(iter(methods)) if len(methods) == 1 else "mixed"
-        controls_used = {
-            locus_id: [
-                n.removeprefix("control:")
-                for n in cn.notes
-                if n.startswith("control:")
-            ]
-            for locus_id, cn in cn_by_locus.items()
-        }
-        return cn_method, controls_used
 
     def _collect_degradations(
         self,

@@ -78,8 +78,4 @@ def test_short_read_produces_valid_output_with_cap(
     disabled = {d["evidence"] for d in manifest["degradations"]}
     assert "haplotype_consistency" in disabled
 
-    # Phase 2.5: CN estimation should be explicitly not-supported for short-read
-    cn_block = summary["loci"]["SMN1"].get("cn_estimate")
-    if cn_block is not None:
-        assert cn_block["status"] == "not_supported_for_tech"
-        assert cn_block["absolute_cn"] is None
+

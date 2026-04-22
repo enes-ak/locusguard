@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
 from locusguard.deletion import classify_deletion
 from locusguard.types import Assignment
@@ -21,7 +20,6 @@ def write_summary(
     variant_counts_by_locus: dict[str, int],
     gene_conv_flags_by_locus: dict[str, bool] | None = None,
     gene_conv_evidence_by_locus: dict[str, str] | None = None,
-    cn_by_locus: Any | None = None,  # removed in Task 5
 ) -> None:
     gene_conv_flags_by_locus = gene_conv_flags_by_locus or {}
     gene_conv_evidence_by_locus = gene_conv_evidence_by_locus or {}
@@ -36,18 +34,6 @@ def write_summary(
         block["gene_conv_flag"] = gene_conv_flags_by_locus.get(locus_id, False)
         if locus_id in gene_conv_evidence_by_locus:
             block["gene_conv_evidence"] = gene_conv_evidence_by_locus[locus_id]
-        if cn_by_locus and locus_id in cn_by_locus:
-            cn = cn_by_locus[locus_id]
-            block["cn_estimate"] = {
-                "absolute_cn": cn.absolute_cn,
-                "absolute_cn_rounded": cn.absolute_cn_rounded,
-                "paralog_ratio": cn.paralog_ratio,
-                "cn_total_family": cn.cn_total_family,
-                "method": cn.method,
-                "confidence": cn.confidence,
-                "status": cn.status,
-                "notes": cn.notes,
-            }
         loci_block[locus_id] = block
 
     doc = {

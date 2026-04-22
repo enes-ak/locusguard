@@ -22,8 +22,6 @@ _INFO_FIELDS = [
     ("LOCUS_KEY", "1", "String", "LocusGuard locus key for cross-output linkage"),
     ("GENE_CONVERSION_FLAG", "1", "Integer",
      "1 if gene conversion suspected at this locus, 0 otherwise"),
-    ("CN_CONTEXT", ".", "String",
-     "Comma-separated locus:cn pairs for all configured loci in this run"),
 ]
 
 
@@ -38,18 +36,15 @@ class VcfProjector:
         input_vcf: Path,
         output_vcf: Path,
         locus_regions: list[LocusRegion],
-        cn_by_locus: dict[str, float | None] | None = None,
     ) -> None:
         self._in_path = input_vcf
         self._out_path = output_vcf
         self._regions = locus_regions
-        self._cn_by_locus = cn_by_locus or {}
 
     def run(self, assignments_by_locus: dict[str, list[Assignment]]) -> None:
         per_locus_summary = {
             locus_id: _summarize(a) for locus_id, a in assignments_by_locus.items()
         }
-        cn_context_value = self._format_cn_context()
 
         reader = VcfReader(self._in_path)
         writer = VcfWriter(
@@ -60,25 +55,12 @@ class VcfProjector:
 
         for variant in reader.iter_variants():
             info_updates = self._info_for_variant(variant, per_locus_summary)
-            if cn_context_value and info_updates:
-                info_updates["CN_CONTEXT"] = cn_context_value
             if info_updates:
                 writer.write_annotated(variant, info_updates)
             else:
                 writer.write_annotated(variant, {})
 
         writer.close()
-
-    def _format_cn_context(self) -> str:
-        if not self._cn_by_locus:
-            return ""
-        parts = []
-        for locus_id, cn in sorted(self._cn_by_locus.items()):
-            if cn is None:
-                parts.append(f"{locus_id}:na")
-            else:
-                parts.append(f"{locus_id}:{cn:.2f}")
-        return ",".join(parts)
 
     def _info_for_variant(
         self,

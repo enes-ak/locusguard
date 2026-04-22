@@ -101,35 +101,4 @@ def test_projection_emits_gene_conversion_flag(mini_vcf, tmp_path):
     assert int(smn1_variant.INFO.get("GENE_CONVERSION_FLAG")) == 1
 
 
-def test_projection_emits_cn_context(mini_vcf, tmp_path):
-    from locusguard.io.vcf import VcfReader
-    from locusguard.projection.vcf import VcfProjector
-    from locusguard.types import Assignment, EvidenceScore
 
-    out = tmp_path / "out.vcf.gz"
-    assignments = [
-        Assignment(
-            read_id=f"r{i}",
-            assigned_locus="SMN1",
-            confidence=0.9,
-            status="RESOLVED",
-            evidence_scores=[
-                EvidenceScore(source="psv_match", normalized=0.9, raw={}, available=True),
-            ],
-            locus_key="SMN1:abc",
-            flags=set(),
-        )
-        for i in range(5)
-    ]
-    projector = VcfProjector(
-        input_vcf=mini_vcf,
-        output_vcf=out,
-        locus_regions=[("SMN1", "chr5", 12000, 15000)],
-        cn_by_locus={"SMN1": 2.05, "SMN2": 1.00},
-    )
-    projector.run({"SMN1": assignments})
-
-    reader = VcfReader(out)
-    variants = list(reader.iter_variants())
-    smn1_variant = next(v for v in variants if v.POS == 13950)
-    assert smn1_variant.INFO.get("CN_CONTEXT") == "SMN1:2.05,SMN2:1.00"

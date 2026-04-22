@@ -114,36 +114,4 @@ def test_assignment_cluster_id_defaults_to_none():
     assert a.cluster_id is None
 
 
-def test_cn_estimate_holds_absolute_and_paralog_fields():
-    from locusguard.types import CnEstimate
-    e = CnEstimate(
-        locus_id="SMN1",
-        absolute_cn=2.05,
-        absolute_cn_rounded=2,
-        paralog_ratio=2.0,
-        cn_total_family=3.05,
-        method="control_region_normalized",
-        confidence=0.87,
-        status="ok",
-        notes=["control:chr5_A", "control:chr5_B"],
-    )
-    assert e.locus_id == "SMN1"
-    assert e.absolute_cn_rounded == 2
-    assert e.status == "ok"
-    assert "control:chr5_A" in e.notes
 
-
-def test_cn_estimate_insufficient_depth_path():
-    from locusguard.types import CnEstimate
-    e = CnEstimate(
-        locus_id="SMN1",
-        absolute_cn=None,
-        absolute_cn_rounded=None,
-        paralog_ratio=None,
-        cn_total_family=None,
-        method="insufficient_depth",
-        confidence=0.0,
-        status="insufficient_depth",
-    )
-    assert e.absolute_cn is None
-    assert e.notes == []

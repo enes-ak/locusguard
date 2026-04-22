@@ -12,7 +12,6 @@ from collections.abc import Iterator
 
 import pysam
 
-from locusguard.cn import estimate_cn
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import PSV, LocusConfig
 from locusguard.depth import DepthStats, compute_region_depth
@@ -33,7 +32,6 @@ from locusguard.scoring import score_assignment
 from locusguard.types import (
     AnalyzedRead,
     Assignment,
-    CnEstimate,
     EvidenceScore,
     HaplotypeCluster,
     PSVObs,
@@ -134,7 +132,6 @@ class LocusAssigner:
         self._locus_key = self._compute_locus_key()
         self._psv_names = [p.name for p in config.psvs]
         self._haplotype_clusters: list[HaplotypeCluster] = []
-        self._cn_estimate: CnEstimate | None = None
         # _adapters is rebuilt per-assign because CoverageRatioEvidence needs
         # a fresh depths_by_locus from the current BAM.
         self._base_adapters: list[EvidenceSource] = [
@@ -153,11 +150,6 @@ class LocusAssigner:
     def haplotype_clusters(self) -> list[HaplotypeCluster]:
         """Haplotype clusters computed during the last assign() call."""
         return list(self._haplotype_clusters)
-
-    @property
-    def cn_estimate(self) -> CnEstimate | None:
-        """CN estimate computed during the last assign() call."""
-        return self._cn_estimate
 
     def assign(self, bam: BamReader, fasta: FastaReader) -> list[Assignment]:
         reads = list(build_analyzed_reads(bam, fasta, self._config, self._profile_name))
@@ -200,9 +192,6 @@ class LocusAssigner:
             depths_by_locus[paralog_id] = (
                 paralog_stats.mean_depth if paralog_stats is not None else 0.0
             )
-
-        # CN estimation
-        self._cn_estimate = estimate_cn(self._config, depths_by_name, tech=tech)
 
         # Assemble adapters with fresh CoverageRatioEvidence
         adapters: list[EvidenceSource] = [
@@ -275,12 +264,6 @@ class LocusAssigner:
             results[paralog_id] = self._safe_compute_depth(
                 bam, coord.chrom, coord.start, coord.end,
                 region_name=paralog_id,
-            )
-
-        for ctrl in self._config.control_regions:
-            results[ctrl.name] = self._safe_compute_depth(
-                bam, ctrl.chrom, ctrl.start, ctrl.end,
-                region_name=ctrl.name,
             )
 
         return results
