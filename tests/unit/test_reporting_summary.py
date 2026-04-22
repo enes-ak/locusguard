@@ -170,3 +170,65 @@ def test_summary_cn_estimate_skipped_when_no_cn(tmp_path):
     doc = json.loads(out.read_text())
     # CN block optional — absent when cn_by_locus not provided
     assert "cn_estimate" not in doc["loci"]["SMN1"]
+
+
+def test_summary_includes_deletion_status_present(tmp_path):
+    """Summary block carries deletion_status='PRESENT' for a locus with
+    ≥1 confident assignment."""
+    from locusguard.reporting.summary import write_summary
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus="SMN1", confidence=0.9,
+            status="RESOLVED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(15)
+    ]
+    out = tmp_path / "s.json"
+    write_summary(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        assignments_by_locus={"SMN1": assignments},
+        variant_counts_by_locus={"SMN1": 0},
+    )
+    import json
+    doc = json.loads(out.read_text())
+    assert doc["loci"]["SMN1"]["deletion_status"] == "PRESENT"
+
+
+def test_summary_includes_deletion_status_homozygous(tmp_path):
+    from locusguard.reporting.summary import write_summary
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus=None, confidence=0.3,
+            status="UNASSIGNED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(15)
+    ]
+    out = tmp_path / "s.json"
+    write_summary(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        assignments_by_locus={"SMN1": assignments},
+        variant_counts_by_locus={"SMN1": 0},
+    )
+    import json
+    doc = json.loads(out.read_text())
+    assert doc["loci"]["SMN1"]["deletion_status"] == "HOMOZYGOUS_DELETION"
+
+
+def test_summary_includes_deletion_status_indeterminate(tmp_path):
+    from locusguard.reporting.summary import write_summary
+    out = tmp_path / "s.json"
+    write_summary(
+        output_path=out, sample_name="x", reference="grch38",
+        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        assignments_by_locus={"SMN1": []},
+        variant_counts_by_locus={"SMN1": 0},
+    )
+    import json
+    doc = json.loads(out.read_text())
+    assert doc["loci"]["SMN1"]["deletion_status"] == "INDETERMINATE"

@@ -4,8 +4,10 @@ from __future__ import annotations
 import json
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
-from locusguard.types import Assignment, CnEstimate
+from locusguard.deletion import classify_deletion
+from locusguard.types import Assignment
 
 
 def write_summary(
@@ -19,7 +21,7 @@ def write_summary(
     variant_counts_by_locus: dict[str, int],
     gene_conv_flags_by_locus: dict[str, bool] | None = None,
     gene_conv_evidence_by_locus: dict[str, str] | None = None,
-    cn_by_locus: dict[str, CnEstimate] | None = None,
+    cn_by_locus: Any | None = None,  # removed in Task 5
 ) -> None:
     gene_conv_flags_by_locus = gene_conv_flags_by_locus or {}
     gene_conv_evidence_by_locus = gene_conv_evidence_by_locus or {}
@@ -64,12 +66,15 @@ def _per_locus_block(
     assignments: list[Assignment],
     variants_annotated: int,
 ) -> dict[str, object]:
+    deletion_status = classify_deletion(assignments)
+
     if not assignments:
         return {
             "status": "UNASSIGNED",
             "read_count": 0,
             "variants_annotated": variants_annotated,
             "mean_confidence": 0.0,
+            "deletion_status": deletion_status,
         }
 
     status_counts = Counter(a.status for a in assignments)
@@ -88,4 +93,5 @@ def _per_locus_block(
         "mean_confidence": round(mean_conf, 4),
         "status_counts": dict(status_counts),
         "flag_counts": dict(flag_counts),
+        "deletion_status": deletion_status,
     }
