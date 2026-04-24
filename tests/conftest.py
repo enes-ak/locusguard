@@ -300,37 +300,3 @@ def gene_conversion_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
     pysam.sort("-o", str(bam_path), str(bam_path))
     pysam.index(str(bam_path))
     return bam_path
-
-
-@pytest.fixture
-def short_read_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
-    """A short-read Illumina-style BAM over the SMN1 region."""
-    bam_path = tmp_path / "short.bam"
-    header = {
-        "HD": {"VN": "1.6", "SO": "coordinate"},
-        "SQ": [{"SN": MINI_CHROM, "LN": MINI_LENGTH}],
-        "RG": [{"ID": "rg1", "PL": "ILLUMINA", "SM": "s1"}],
-    }
-    with pysam.FastaFile(str(multi_psv_fasta)) as fa:
-        full = fa.fetch(MINI_CHROM, 12800, 14400).upper()
-
-    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
-        for i in range(20):
-            start = 12900 + (i * 50)
-            seq = full[start - 12800 : start - 12800 + 150]
-            if len(seq) < 150:
-                continue
-            read = pysam.AlignedSegment()
-            read.query_name = f"sr_{i}"
-            read.query_sequence = seq
-            read.flag = 0
-            read.reference_id = 0
-            read.reference_start = start
-            read.mapping_quality = 40
-            read.cigar = [(0, 150)]
-            read.query_qualities = pysam.qualitystring_to_array("I" * 150)
-            read.set_tag("RG", "rg1")
-            bam.write(read)
-    pysam.sort("-o", str(bam_path), str(bam_path))
-    pysam.index(str(bam_path))
-    return bam_path

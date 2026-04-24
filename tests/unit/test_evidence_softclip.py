@@ -65,7 +65,6 @@ def test_heavy_softclip_scores_low(cfg):
     assert 0.7 < score.normalized < 0.8
 
 
-
 def test_empty_reads_unavailable(cfg):
     score = SoftclipEvidence().compute([], cfg)
     assert score.available is False

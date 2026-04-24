@@ -30,7 +30,7 @@ def cfg() -> LocusConfig:
     return LocusConfig.model_validate(_MINIMAL)
 
 
-def _read(mapq: int, mapq_zero: bool = False, is_long: bool = True) -> AnalyzedRead:
+def _read(mapq: int, mapq_zero: bool = False) -> AnalyzedRead:
     return AnalyzedRead(
         read_id="r",
         aligned_chrom="chr5",
@@ -39,7 +39,7 @@ def _read(mapq: int, mapq_zero: bool = False, is_long: bool = True) -> AnalyzedR
         mapq=mapq,
         softclip_5p=0,
         softclip_3p=0,
-        is_long_read=is_long,
+        is_long_read=True,
         is_supplementary=False,
         original_mapq_zero=mapq_zero,
     )
@@ -57,7 +57,6 @@ def test_ont_zero_mapq_scores_zero(cfg):
     adapter = MapqPatternEvidence()
     score = adapter.compute([_read(0, mapq_zero=True)], cfg)
     assert score.normalized == 0.0
-
 
 
 def test_empty_reads_unavailable(cfg):
