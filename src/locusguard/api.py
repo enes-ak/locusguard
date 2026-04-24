@@ -42,10 +42,11 @@ _TECH_DATATYPE_TO_PROFILE = {
     ("short-read", "wes"): "short_read_wes",
 }
 
-_PHASE2_5_SCOPE_WARNING = (
-    "Phase 2.5 release: PSV match, haplotype consistency, MAPQ pattern, "
-    "soft-clip, and coverage-ratio evidence adapters are active. "
-    "Unique-k-mer adapter and WES mode (--capture-bed) ship in Phase 2.6."
+_SCOPE_WARNING = (
+    "Phase 2.6-alt release: PSV match, haplotype consistency, MAPQ pattern, "
+    "soft-clip, and coverage-ratio evidence adapters are active, plus "
+    "homozygous-deletion detection. Unique-k-mer adapter and WES mode "
+    "(--capture-bed) ship in Phase 2.7."
 )
 
 
@@ -90,7 +91,7 @@ class Annotator:
 
         assignments_by_locus: dict[str, list[Assignment]] = {}
         clusters_by_locus: dict[str, list[HaplotypeCluster]] = {}
-        warnings: list[str] = [_PHASE2_5_SCOPE_WARNING]
+        warnings: list[str] = [_SCOPE_WARNING]
         with (
             BamReader(bam) as bam_reader,
             FastaReader(self._reference_fasta) as fasta_reader,
