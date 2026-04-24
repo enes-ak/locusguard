@@ -17,11 +17,11 @@ Each annotated variant carries:
 
 ## Status
 
-**Phase 2.7.** Supported: SMN1/SMN2 on GRCh38. **ONT long-read input only** (short-read support removed in this phase). Multi-evidence scoring (PSV match, haplotype consistency, MAPQ pattern, soft-clip, coverage ratio), haplotype clustering, gene-conversion detection, and homozygous-deletion detection are all active. `--data-type wes` is accepted as a future-facing knob and currently runs with default evidence weights; dedicated ONT WES calibration ships in a later phase.
+**Phase 2.8.** Supported: SMN1/SMN2 on GRCh38. **ONT long-read input only**. Three data types accepted: `--data-type wgs | wes | panel`. Multi-evidence scoring (PSV match, haplotype consistency, MAPQ pattern, soft-clip, coverage ratio), haplotype clustering, gene-conversion detection, and homozygous-deletion detection are all active. WES and Panel modes silence the coverage-ratio adapter (capture asymmetry breaks its assumptions) and accept an optional `--capture-bed <path.bed>` for PSV coverage validation — when provided, missing PSVs are reported in the summary and manifest warnings. `ont_wes` and `ont_panel` profile weights are scaffolds mirroring `ont_wgs`; real-data calibration pending.
 
 Absolute copy-number quantitation was removed in Phase 2.6-alt — benchmarking on HG002 R10.4.1 Dorado sup and olgu1 (R9/R10) showed the depth-based estimator is sensitive to aligner primary/secondary mapping decisions, yielding chemistry- and pipeline-dependent bias that cannot be closed with a static calibration factor. For absolute CN (SMA carrier screening etc.), use an orthogonal method (MLPA, ddPCR).
 
-Not yet supported: ONT WES calibration (future phase), GBA/PMS2 (Phase 3), BAM output (Phase 3), packaging for Bioconda/Docker/nf-core (Phase 4).
+Not yet supported: ONT WES/Panel weight calibration with real data (future phase), GBA/PMS2 (Phase 3), BAM output (Phase 3), packaging for Bioconda/Docker/nf-core (Phase 4).
 
 ## Install
 
@@ -58,6 +58,24 @@ Outputs:
 - `patient.lg.summary.json` — per-locus status + `deletion_status` per locus
 - `patient.lg.manifest.json` — versions, config hashes, command, runtime
 - `patient.lg.report.html` — human-readable report with Deletion Status panel
+
+For ONT Panel or WES input with a capture bed:
+
+```bash
+locusguard annotate \
+  --bam patient.bam \
+  --vcf patient.vcf.gz \
+  --reference grch38 \
+  --data-type panel \
+  --capture-bed my_panel.bed \
+  --locus SMN1,SMN2 \
+  --emit-report \
+  --output patient.lg.vcf.gz
+```
+
+The `--capture-bed` flag activates PSV-coverage validation: any PSV position
+outside the capture bed is reported as missing in the summary JSON and
+flagged in the manifest warnings.
 
 ## Library use
 

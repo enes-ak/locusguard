@@ -43,10 +43,12 @@ _DATATYPE_TO_PROFILE = {
 }
 
 _SCOPE_WARNING = (
-    "Phase 2.7 release: ONT long-read only. PSV match, haplotype consistency, "
+    "Phase 2.8 release: ONT long-read only. PSV match, haplotype consistency, "
     "MAPQ pattern, soft-clip, and coverage-ratio evidence adapters are active, "
-    "plus homozygous-deletion detection. --data-type wes is accepted but runs "
-    "with default weights until ONT WES calibration data is available."
+    "plus homozygous-deletion detection. --data-type wgs|wes|panel accepted; "
+    "WES and Panel modes silence coverage-ratio adapter and support optional "
+    "--capture-bed for PSV coverage validation. WES/Panel weight calibration "
+    "pending real-data validation."
 )
 
 
