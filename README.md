@@ -1,6 +1,6 @@
 # LocusGuard
 
-Caller-agnostic locus disambiguation engine for paralog and pseudogene regions — optimized for ONT long-read WGS, graceful on short-read.
+Caller-agnostic locus disambiguation engine for paralog and pseudogene regions — ONT long-read only.
 
 ## What it does
 
@@ -17,11 +17,11 @@ Each annotated variant carries:
 
 ## Status
 
-**Phase 2.6-alt.** Supported: SMN1/SMN2 on GRCh38. ONT input with multi-evidence scoring (PSV match, haplotype consistency, MAPQ pattern, soft-clip, coverage ratio), haplotype clustering, gene-conversion detection, and **homozygous-deletion detection**. Short-read input is accepted but evidence adapters that require long reads are gracefully skipped.
+**Phase 2.7.** Supported: SMN1/SMN2 on GRCh38. **ONT long-read input only** (short-read support removed in this phase). Multi-evidence scoring (PSV match, haplotype consistency, MAPQ pattern, soft-clip, coverage ratio), haplotype clustering, gene-conversion detection, and homozygous-deletion detection are all active. `--data-type wes` is accepted as a future-facing knob and currently runs with default evidence weights; dedicated ONT WES calibration ships in a later phase.
 
-Absolute copy-number quantitation was removed in this phase — benchmarking on HG002 R10.4.1 Dorado sup and olgu1 (R9/R10) showed the depth-based estimator is sensitive to aligner primary/secondary mapping decisions, yielding chemistry- and pipeline-dependent bias that cannot be closed with a static calibration factor. For absolute CN (SMA carrier screening etc.), use an orthogonal method (MLPA, ddPCR).
+Absolute copy-number quantitation was removed in Phase 2.6-alt — benchmarking on HG002 R10.4.1 Dorado sup and olgu1 (R9/R10) showed the depth-based estimator is sensitive to aligner primary/secondary mapping decisions, yielding chemistry- and pipeline-dependent bias that cannot be closed with a static calibration factor. For absolute CN (SMA carrier screening etc.), use an orthogonal method (MLPA, ddPCR).
 
-Not yet supported: WES mode (Phase 2.7), GBA/PMS2 (Phase 3), BAM output (Phase 3), packaging for Bioconda/Docker/nf-core (Phase 4).
+Not yet supported: ONT WES calibration (future phase), GBA/PMS2 (Phase 3), BAM output (Phase 3), packaging for Bioconda/Docker/nf-core (Phase 4).
 
 ## Install
 
@@ -46,7 +46,6 @@ locusguard annotate \
   --bam patient.bam \
   --vcf patient.vcf.gz \
   --reference grch38 \
-  --tech ont \
   --data-type wgs \
   --locus SMN1,SMN2 \
   --emit-report \
@@ -72,7 +71,6 @@ configs = [load_config(p) for p in ["SMN1.yaml", "SMN2.yaml"]]
 annotator = Annotator(
     configs=configs,
     reference_fasta=Path("/refs/grch38.primary.fa"),
-    tech="ont",
     data_type="wgs",
 )
 result = annotator.annotate_vcf(

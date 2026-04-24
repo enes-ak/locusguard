@@ -1,9 +1,10 @@
-"""MAPQ-based evidence — tech-differentiated.
+"""MAPQ-based evidence for ONT long reads.
 
-Long-read: high MAPQ strongly supports the aligner's choice of locus.
-Short-read: MAPQ=0 is common in paralog regions (BWA-MEM assigns MAPQ=0 to
-equally-good placements), so it's not a strong *negative* signal. We treat
-it as a neutral prior (0.5) rather than a penalty.
+High MAPQ strongly supports the aligner's choice of locus. When an
+individual read is not flagged as long (read.is_long_read=False, rare
+in ONT pipelines), MAPQ=0 is treated as a neutral prior (0.5) rather
+than a penalty — in those cases the short-read convention (BWA-MEM-style
+equally-good-placement MAPQ=0) may apply, so we avoid penalizing it.
 """
 from __future__ import annotations
 

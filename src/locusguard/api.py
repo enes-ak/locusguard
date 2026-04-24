@@ -41,10 +41,10 @@ _DATATYPE_TO_PROFILE = {
 }
 
 _SCOPE_WARNING = (
-    "Phase 2.6-alt release: PSV match, haplotype consistency, MAPQ pattern, "
-    "soft-clip, and coverage-ratio evidence adapters are active, plus "
-    "homozygous-deletion detection. Unique-k-mer adapter and WES mode "
-    "(--capture-bed) ship in Phase 2.7."
+    "Phase 2.7 release: ONT long-read only. PSV match, haplotype consistency, "
+    "MAPQ pattern, soft-clip, and coverage-ratio evidence adapters are active, "
+    "plus homozygous-deletion detection. --data-type wes is accepted but runs "
+    "with default weights until ONT WES calibration data is available."
 )
 
 
