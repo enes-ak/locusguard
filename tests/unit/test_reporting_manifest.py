@@ -12,7 +12,6 @@ def test_manifest_contains_run_metadata(tmp_path):
         reference_fasta_path="/refs/grch38.fa",
         reference_fasta_md5="abc123",
         config_hashes={"SMN1": "sha256:aaaa", "SMN2": "sha256:bbbb"},
-        tech="ont",
         data_type="wgs",
         profile_used="ont_wgs",
         runtime_seconds=42.5,
@@ -21,7 +20,6 @@ def test_manifest_contains_run_metadata(tmp_path):
     doc = json.loads(out.read_text())
     assert doc["locusguard_version"] == "0.1.0"
     assert "locusguard annotate" in doc["command_line"]
-    assert doc["tech"] == "ont"
     assert doc["profile_used"] == "ont_wgs"
     assert doc["reference_fasta"]["md5"] == "abc123"
     assert doc["config_hashes"]["SMN1"] == "sha256:aaaa"

@@ -43,7 +43,7 @@ _TEMPLATE = """<!DOCTYPE html>
 <header>
   <h1>LocusGuard report — {{ sample_name }}</h1>
   <div class="meta">
-    Reference: {{ reference }} · Tech: {{ tech }} · Data type: {{ data_type }} · Runtime: {{ '%.1f'|format(runtime_seconds) }} s
+    Reference: {{ reference }} · Data type: {{ data_type }} · Runtime: {{ '%.1f'|format(runtime_seconds) }} s
   </div>
 </header>
 
@@ -127,7 +127,6 @@ def write_html_report(
     output_path: Path,
     sample_name: str,
     reference: str,
-    tech: str,
     data_type: str,
     runtime_seconds: float,
     locusguard_version: str,
@@ -176,7 +175,6 @@ def write_html_report(
     html = template.render(
         sample_name=sample_name,
         reference=reference,
-        tech=tech,
         data_type=data_type,
         runtime_seconds=runtime_seconds,
         locusguard_version=locusguard_version,

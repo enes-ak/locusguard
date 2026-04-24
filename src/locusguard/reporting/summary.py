@@ -13,7 +13,6 @@ def write_summary(
     output_path: Path,
     sample_name: str,
     reference: str,
-    tech: str,
     data_type: str,
     runtime_seconds: float,
     assignments_by_locus: dict[str, list[Assignment]],
@@ -39,7 +38,6 @@ def write_summary(
     doc = {
         "sample": sample_name,
         "reference": reference,
-        "tech": tech,
         "data_type": data_type,
         "runtime_sec": runtime_seconds,
         "loci": loci_block,

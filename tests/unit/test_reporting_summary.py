@@ -29,7 +29,6 @@ def test_summary_json_has_expected_top_level_fields(tmp_path):
         output_path=out,
         sample_name="HG002",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=42.5,
         assignments_by_locus={
@@ -40,7 +39,6 @@ def test_summary_json_has_expected_top_level_fields(tmp_path):
     )
     doc = json.loads(out.read_text())
     assert doc["sample"] == "HG002"
-    assert doc["tech"] == "ont"
     assert doc["data_type"] == "wgs"
     assert doc["reference"] == "grch38"
     assert doc["runtime_sec"] == 42.5
@@ -55,7 +53,6 @@ def test_summary_reports_mixed_status_as_dominant(tmp_path):
         output_path=out,
         sample_name="HG002",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=1.0,
         assignments_by_locus={
@@ -77,7 +74,6 @@ def test_summary_reports_empty_locus(tmp_path):
         output_path=out,
         sample_name="HG002",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=1.0,
         assignments_by_locus={"SMN1": []},
@@ -98,7 +94,6 @@ def test_summary_includes_gene_conv_flag(tmp_path):
         output_path=out,
         sample_name="s",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=1.0,
         assignments_by_locus={
@@ -129,7 +124,7 @@ def test_summary_includes_deletion_status_present(tmp_path):
     out = tmp_path / "s.json"
     write_summary(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         assignments_by_locus={"SMN1": assignments},
         variant_counts_by_locus={"SMN1": 0},
     )
@@ -152,7 +147,7 @@ def test_summary_includes_deletion_status_homozygous(tmp_path):
     out = tmp_path / "s.json"
     write_summary(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         assignments_by_locus={"SMN1": assignments},
         variant_counts_by_locus={"SMN1": 0},
     )
@@ -166,7 +161,7 @@ def test_summary_includes_deletion_status_indeterminate(tmp_path):
     out = tmp_path / "s.json"
     write_summary(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         assignments_by_locus={"SMN1": []},
         variant_counts_by_locus={"SMN1": 0},
     )

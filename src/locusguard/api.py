@@ -127,7 +127,6 @@ class Annotator:
                 output_path=summary_path,
                 sample_name=sample_name or _infer_sample_name(vcf_in),
                 reference="grch38",
-                tech="ont",  # TODO(Phase 2.7 Task 4): remove when write_* drops tech param
                 data_type=self._data_type,
                 runtime_seconds=round(runtime, 3),
                 assignments_by_locus=assignments_by_locus,
@@ -145,7 +144,6 @@ class Annotator:
                 reference_fasta_path=str(self._reference_fasta),
                 reference_fasta_md5=_md5(self._reference_fasta),
                 config_hashes={cfg.locus.id: _config_hash(cfg) for cfg in self._configs},
-                tech="ont",  # TODO(Phase 2.7 Task 4): remove when write_* drops tech param
                 data_type=self._data_type,
                 profile_used=self._profile_name,
                 runtime_seconds=round(runtime, 3),
@@ -165,7 +163,6 @@ class Annotator:
                 output_path=html_report_path,
                 sample_name=sample_name or _infer_sample_name(vcf_in),
                 reference="grch38",
-                tech="ont",  # TODO(Phase 2.7 Task 4): remove when write_* drops tech param
                 data_type=self._data_type,
                 runtime_seconds=round(runtime, 3),
                 locusguard_version=__version__,

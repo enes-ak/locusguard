@@ -22,7 +22,6 @@ def test_html_contains_per_locus_cards(tmp_path):
         output_path=out,
         sample_name="olgu1",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=15.0,
         locusguard_version="0.2.0",
@@ -57,7 +56,6 @@ def test_html_shows_gene_conversion_alert(tmp_path):
         output_path=out,
         sample_name="s",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=1.0,
         locusguard_version="0.2.0",
@@ -84,7 +82,6 @@ def test_html_renders_empty_locus(tmp_path):
         output_path=out,
         sample_name="s",
         reference="grch38",
-        tech="ont",
         data_type="wgs",
         runtime_seconds=0.5,
         locusguard_version="0.2.0",
@@ -115,7 +112,7 @@ def test_html_report_shows_deletion_status_present(tmp_path):
     out = tmp_path / "r.html"
     write_html_report(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         locusguard_version="test",
         assignments_by_locus={"SMN1": assignments},
         clusters_by_locus={"SMN1": []},
@@ -143,7 +140,7 @@ def test_html_report_shows_deletion_status_homozygous(tmp_path):
     out = tmp_path / "r.html"
     write_html_report(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         locusguard_version="test",
         assignments_by_locus={"SMN1": assignments},
         clusters_by_locus={"SMN1": []},
@@ -172,7 +169,7 @@ def test_html_report_shows_deletion_status_indeterminate(tmp_path):
     out = tmp_path / "r.html"
     write_html_report(
         output_path=out, sample_name="x", reference="grch38",
-        tech="ont", data_type="wgs", runtime_seconds=0.1,
+        data_type="wgs", runtime_seconds=0.1,
         locusguard_version="test",
         assignments_by_locus={"SMN1": assignments},
         clusters_by_locus={"SMN1": []},
