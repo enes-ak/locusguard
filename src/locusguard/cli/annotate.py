@@ -31,8 +31,15 @@ def annotate(
         typer.Option("--reference-fasta", help="Path to reference FASTA (overrides env/config)."),
     ] = None,
     data_type: Annotated[
-        str, typer.Option("--data-type", help="Data type (wgs | wes).")
+        str, typer.Option("--data-type", help="Data type (wgs | wes | panel).")
     ] = "wgs",
+    capture_bed: Annotated[
+        Path | None,
+        typer.Option(
+            "--capture-bed",
+            help="BED file of capture regions (optional; valid with --data-type wes or panel).",
+        ),
+    ] = None,
     locus: Annotated[
         str | None,
         typer.Option(
@@ -61,6 +68,21 @@ def annotate(
     LOCUS_STATUS, LOCUS_EVIDENCE, LOCUS_KEY fields on variants inside configured
     locus regions.
     """
+    valid_data_types = {"wgs", "wes", "panel"}
+    if data_type not in valid_data_types:
+        raise typer.BadParameter(
+            f"--data-type must be one of: {', '.join(sorted(valid_data_types))}"
+        )
+    if data_type == "wgs" and capture_bed is not None:
+        raise typer.BadParameter(
+            "--capture-bed only valid with --data-type wes or panel"
+        )
+    if data_type in ("wes", "panel") and capture_bed is None:
+        console.print(
+            f"[yellow]notice:[/yellow] --data-type {data_type} without --capture-bed — "
+            f"PSV coverage cannot be verified"
+        )
+
     user_config_path = Path.home() / ".locusguard" / "config.yaml"
     try:
         fasta_path = resolve_reference_fasta(
@@ -84,6 +106,7 @@ def annotate(
         configs=configs,
         reference_fasta=fasta_path,
         data_type=data_type,
+        capture_bed=capture_bed,
     )
 
     out_dir = output.parent
