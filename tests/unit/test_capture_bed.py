@@ -180,3 +180,11 @@ def test_compute_empty_regions() -> None:
     cfg = _make_locus_config([("psv1", 150)])
     cov = compute_psv_coverage(cfg, [])
     assert cov == PsvCoverage(covered=[], missing=["psv1"], fraction_covered=0.0)
+
+
+def test_load_inverted_interval_raises(tmp_path: Path) -> None:
+    """start > end is rejected as a malformed BED row."""
+    p = tmp_path / "t.bed"
+    p.write_text("chr5\t5000\t100\n")
+    with pytest.raises(CaptureBedError, match="start .* > end"):
+        load_capture_bed(p)

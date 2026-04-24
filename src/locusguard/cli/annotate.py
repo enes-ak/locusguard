@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from locusguard.api import Annotator
+from locusguard.api import _DATATYPE_TO_PROFILE, Annotator
 from locusguard.config import load_config
 from locusguard.config.schema import LocusConfig
 from locusguard.io.reference import ReferenceNotFoundError, resolve_reference_fasta
@@ -68,10 +68,9 @@ def annotate(
     LOCUS_STATUS, LOCUS_EVIDENCE, LOCUS_KEY fields on variants inside configured
     locus regions.
     """
-    valid_data_types = {"wgs", "wes", "panel"}
-    if data_type not in valid_data_types:
+    if data_type not in _DATATYPE_TO_PROFILE:
         raise typer.BadParameter(
-            f"--data-type must be one of: {', '.join(sorted(valid_data_types))}"
+            f"--data-type must be one of: {', '.join(sorted(_DATATYPE_TO_PROFILE))}"
         )
     if data_type == "wgs" and capture_bed is not None:
         raise typer.BadParameter(

@@ -74,6 +74,10 @@ class Annotator:
         self._reference_fasta = reference_fasta
         self._data_type = data_type
         self._capture_bed = capture_bed
+        if data_type == "wgs" and capture_bed is not None:
+            raise ValueError(
+                "capture_bed is only valid with data_type 'wes' or 'panel' — got 'wgs'"
+            )
         self._profile_name = _DATATYPE_TO_PROFILE.get(data_type)
 
     def annotate_vcf(

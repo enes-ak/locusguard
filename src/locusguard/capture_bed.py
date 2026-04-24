@@ -84,6 +84,11 @@ def load_capture_bed(path: Path) -> list[CaptureRegion]:
                     f"Line {line_num}: start/end must be integers,"
                     f" got '{parts[1]}' / '{parts[2]}'"
                 ) from e
+            if start > end:
+                raise CaptureBedError(
+                    f"Line {line_num}: start ({start}) > end ({end})"
+                    f" — BED intervals must be non-inverted"
+                )
             regions.append(CaptureRegion(chrom=chrom, start=start, end=end))
     return regions
 

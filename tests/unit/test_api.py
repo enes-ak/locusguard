@@ -127,3 +127,20 @@ def test_annotator_capture_bed_defaults_to_none():
         data_type="wgs",
     )
     assert annotator._capture_bed is None
+
+
+def test_annotator_rejects_wgs_with_capture_bed():
+    """Annotator API rejects data_type='wgs' + capture_bed combination
+    (matches the CLI's behavior for the library-level API)."""
+    from pathlib import Path
+
+    import pytest
+
+    from locusguard.api import Annotator
+    with pytest.raises(ValueError, match="capture_bed is only valid"):
+        Annotator(
+            configs=[],
+            reference_fasta=Path("/fake/ref.fa"),
+            data_type="wgs",
+            capture_bed=Path("/fake/cap.bed"),
+        )
