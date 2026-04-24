@@ -37,7 +37,12 @@ class CaptureRegion:
 
 @dataclass(frozen=True, slots=True)
 class PsvCoverage:
-    """Per-locus PSV coverage result."""
+    """Per-locus PSV coverage result.
+
+    ``covered`` and ``missing`` are lists by convention; callers must not
+    mutate them after construction. ``fraction_covered`` is
+    ``len(covered) / total``, or ``0.0`` when the config defines no PSVs.
+    """
 
     covered: list[str]
     missing: list[str]
