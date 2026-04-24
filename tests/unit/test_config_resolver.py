@@ -22,6 +22,7 @@ def _make_weights() -> ProfiledWeights:
                 "cap_confidence": 1.0,
                 "enable": ["long_haplotype"],
             },
+            # deliberately stale name — exercises resolver fallback for Phase 2.7+
             "short_read_wes": {
                 "psv_match": 0.50,
                 "cap_confidence": 0.85,

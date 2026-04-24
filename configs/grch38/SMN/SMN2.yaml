@@ -76,4 +76,4 @@ validation:
   tested_samples: []
   tested_tech: [ont_r10.4]
   config_author: "LocusGuard core team"
-  last_calibrated: "2026-04-18"
+  last_calibrated: "2026-04-24"
