@@ -71,6 +71,12 @@ evidence_weights:
       coverage_ratio: 0.10
       cap_confidence: 1.0
       enable: [long_haplotype, multi_psv_phasing]
+    ont_wes:
+      # Phase 2.8 scaffold — weights mirror ont_wgs until ONT WES calibration data arrives.
+      disable: [coverage_ratio]
+    ont_panel:
+      # Phase 2.8 scaffold — weights mirror ont_wgs until ONT Panel calibration data arrives.
+      disable: [coverage_ratio]
 
 confidence_thresholds:
   resolved: 0.80

@@ -38,6 +38,7 @@ from locusguard.types import Assignment, HaplotypeCluster
 _DATATYPE_TO_PROFILE = {
     "wgs": "ont_wgs",
     "wes": "ont_wes",
+    "panel": "ont_panel",
 }
 
 _SCOPE_WARNING = (
