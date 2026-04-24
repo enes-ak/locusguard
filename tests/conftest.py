@@ -300,3 +300,29 @@ def gene_conversion_bam(tmp_path: Path, multi_psv_fasta: Path) -> Path:
     pysam.sort("-o", str(bam_path), str(bam_path))
     pysam.index(str(bam_path))
     return bam_path
+
+
+@pytest.fixture
+def sma_panel_bed_full_coverage(tmp_path: Path) -> Path:
+    """Synthetic BED covering SMN1 primary region (12000-15000) fully,
+    including the PSV at 14001 in the synthetic config."""
+    bed = tmp_path / "panel_full.bed"
+    bed.write_text("chr5\t12000\t15000\n")
+    return bed
+
+
+@pytest.fixture
+def sma_panel_bed_missing_psv(tmp_path: Path) -> Path:
+    """Synthetic BED covering SMN1 primary region but ending BEFORE the PSV
+    at 14001 (so that PSV is reported as missing)."""
+    bed = tmp_path / "panel_missing.bed"
+    bed.write_text("chr5\t12000\t13500\n")
+    return bed
+
+
+@pytest.fixture
+def sma_panel_bed_empty(tmp_path: Path) -> Path:
+    """Synthetic BED with zero regions (just track/comment lines)."""
+    bed = tmp_path / "panel_empty.bed"
+    bed.write_text("track name=empty_panel\n# nothing to see here\n")
+    return bed
