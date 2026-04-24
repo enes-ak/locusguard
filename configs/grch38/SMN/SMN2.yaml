@@ -67,18 +67,6 @@ evidence_weights:
       coverage_ratio: 0.10
       cap_confidence: 1.0
       enable: [long_haplotype, multi_psv_phasing]
-    short_read_wgs:
-      psv_match: 0.45
-      haplotype_consistency: 0.20
-      coverage_ratio: 0.05
-      cap_confidence: 0.90
-      disable: [long_haplotype, multi_psv_phasing]
-    short_read_wes:
-      psv_match: 0.50
-      haplotype_consistency: 0.15
-      softclip: 0.15
-      cap_confidence: 0.85
-      disable: [coverage_ratio, long_haplotype, multi_psv_phasing]
 
 confidence_thresholds:
   resolved: 0.80
