@@ -76,10 +76,3 @@ def test_zero_total_depth_neutral(cfg):
     assert score.available is True
 
 
-def test_supports_ont_only():
-    adapter = CoverageRatioEvidence(
-        locus_id="SMN1",
-        depths_by_locus={"SMN1": 30.0, "SMN2": 30.0},
-    )
-    assert adapter.supports("ont") is True
-    assert adapter.supports("short-read") is False

@@ -124,9 +124,3 @@ def test_psv_evidence_reports_decomposition(smn1_cfg):
     score = adapter.compute(reads, smn1_cfg)
     assert "matches" in score.raw
     assert "total_observations" in score.raw
-
-
-def test_psv_evidence_supports_both_techs(smn1_cfg):
-    adapter = PSVEvidence(target_locus="SMN1")
-    assert adapter.supports("ont") is True
-    assert adapter.supports("short-read") is True

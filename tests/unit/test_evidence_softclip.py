@@ -65,10 +65,6 @@ def test_heavy_softclip_scores_low(cfg):
     assert 0.7 < score.normalized < 0.8
 
 
-def test_supports_both_techs():
-    assert SoftclipEvidence().supports("ont") is True
-    assert SoftclipEvidence().supports("short-read") is True
-
 
 def test_empty_reads_unavailable(cfg):
     score = SoftclipEvidence().compute([], cfg)

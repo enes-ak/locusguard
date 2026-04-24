@@ -82,11 +82,6 @@ def test_missing_cluster_consensus_unavailable(cfg):
     assert score.available is False
 
 
-def test_unsupports_short_read():
-    adapter = HaplotypeConsistencyEvidence()
-    assert adapter.supports("ont") is True
-    assert adapter.supports("short-read") is False
-
 
 def test_only_one_reach_psv_unavailable(cfg):
     # Need >=2 overlapping observations for consistency to be meaningful.

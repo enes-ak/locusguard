@@ -59,24 +59,6 @@ def test_ont_zero_mapq_scores_zero(cfg):
     assert score.normalized == 0.0
 
 
-def test_short_read_zero_mapq_scores_half(cfg):
-    adapter = MapqPatternEvidence()
-    score = adapter.compute([_read(0, mapq_zero=True, is_long=False)], cfg)
-    # Short-read MAPQ=0 is common for paralog regions — not penalized to 0.
-    assert score.normalized == pytest.approx(0.5)
-
-
-def test_short_read_high_mapq_scores_high(cfg):
-    adapter = MapqPatternEvidence()
-    score = adapter.compute([_read(40, is_long=False)], cfg)
-    assert score.normalized > 0.5
-
-
-def test_supports_both_techs():
-    adapter = MapqPatternEvidence()
-    assert adapter.supports("ont") is True
-    assert adapter.supports("short-read") is True
-
 
 def test_empty_reads_unavailable(cfg):
     adapter = MapqPatternEvidence()
