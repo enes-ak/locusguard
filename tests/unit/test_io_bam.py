@@ -21,7 +21,7 @@ def test_bam_reader_header_accessible(smn_like_bam):
     assert "chr5" in reader.chromosomes()
 
 
-def test_bam_reader_detects_short_reads_heuristically(smn_like_bam):
+def test_bam_reader_estimated_is_long_read_returns_true_for_long_reads(smn_like_bam):
     reader = BamReader(smn_like_bam)
     # Our fixture reads are 2000 bp → classified as long
     assert reader.estimated_is_long_read() is True
