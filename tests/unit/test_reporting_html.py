@@ -216,8 +216,8 @@ def test_html_report_shows_psv_coverage_panel_when_provided(tmp_path):
     )
     html = out.read_text()
     assert "PSV Coverage" in html
-    assert "c.840C>T" in html
-    assert "c.*3G>A" in html
+    assert "c.840C&gt;T" in html
+    assert "c.*3G&gt;A" in html
 
 
 def test_html_report_omits_psv_coverage_panel_without_data(tmp_path):

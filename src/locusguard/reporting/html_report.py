@@ -81,12 +81,12 @@ _TEMPLATE = """<!DOCTYPE html>
       <span style="margin-left: 0.4em;">{{ summary.psv_coverage.covered|length }} covered / {{ summary.psv_coverage.missing|length }} missing</span>
       {% if summary.psv_coverage.covered %}
       <div style="margin-top: 0.3em; font-size: 0.95em;">
-        <em>Covered PSVs:</em> {{ summary.psv_coverage.covered|join(', ')|safe }}
+        <em>Covered PSVs:</em> {{ summary.psv_coverage.covered|join(', ') }}
       </div>
       {% endif %}
       {% if summary.psv_coverage.missing %}
       <div style="margin-top: 0.3em; font-size: 0.95em;">
-        <em>Missing PSVs:</em> {{ summary.psv_coverage.missing|join(', ')|safe }}
+        <em>Missing PSVs:</em> {{ summary.psv_coverage.missing|join(', ') }}
       </div>
       {% endif %}
     </div>
