@@ -8,7 +8,7 @@ Users who embed LocusGuard in custom scripts use this module:
     annotator = Annotator(
         configs=[load_config(p) for p in config_paths],
         reference_fasta=Path("/refs/grch38.fa"),
-        tech="ont", data_type="wgs",
+        data_type="wgs",
     )
     annotator.annotate_vcf(bam=..., vcf_in=..., vcf_out=...)
 """
@@ -35,11 +35,9 @@ from locusguard.reporting.manifest import write_manifest
 from locusguard.reporting.summary import write_summary
 from locusguard.types import Assignment, HaplotypeCluster
 
-_TECH_DATATYPE_TO_PROFILE = {
-    ("ont", "wgs"): "ont_wgs",
-    ("ont", "wes"): "ont_wes",
-    ("short-read", "wgs"): "short_read_wgs",
-    ("short-read", "wes"): "short_read_wes",
+_DATATYPE_TO_PROFILE = {
+    "wgs": "ont_wgs",
+    "wes": "ont_wes",
 }
 
 _SCOPE_WARNING = (
@@ -65,14 +63,12 @@ class Annotator:
         self,
         configs: list[LocusConfig],
         reference_fasta: Path,
-        tech: str,
         data_type: str,
     ) -> None:
         self._configs = configs
         self._reference_fasta = reference_fasta
-        self._tech = tech
         self._data_type = data_type
-        self._profile_name = _TECH_DATATYPE_TO_PROFILE.get((tech, data_type))
+        self._profile_name = _DATATYPE_TO_PROFILE.get(data_type)
 
     def annotate_vcf(
         self,
@@ -131,7 +127,7 @@ class Annotator:
                 output_path=summary_path,
                 sample_name=sample_name or _infer_sample_name(vcf_in),
                 reference="grch38",
-                tech=self._tech,
+                tech="ont",
                 data_type=self._data_type,
                 runtime_seconds=round(runtime, 3),
                 assignments_by_locus=assignments_by_locus,
@@ -149,7 +145,7 @@ class Annotator:
                 reference_fasta_path=str(self._reference_fasta),
                 reference_fasta_md5=_md5(self._reference_fasta),
                 config_hashes={cfg.locus.id: _config_hash(cfg) for cfg in self._configs},
-                tech=self._tech,
+                tech="ont",
                 data_type=self._data_type,
                 profile_used=self._profile_name,
                 runtime_seconds=round(runtime, 3),
@@ -169,7 +165,7 @@ class Annotator:
                 output_path=html_report_path,
                 sample_name=sample_name or _infer_sample_name(vcf_in),
                 reference="grch38",
-                tech=self._tech,
+                tech="ont",
                 data_type=self._data_type,
                 runtime_seconds=round(runtime, 3),
                 locusguard_version=__version__,

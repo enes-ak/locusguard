@@ -47,7 +47,6 @@ def test_smn1_homozygous_deletion_detected(
     annotator = Annotator(
         configs=[smn1],
         reference_fasta=smn_like_fasta,
-        tech="ont",
         data_type="wgs",
     )
     out_vcf = tmp_path / "out.vcf.gz"
@@ -76,7 +75,6 @@ def test_smn_like_bam_not_deleted(
     annotator = Annotator(
         configs=[smn1],
         reference_fasta=smn_like_fasta,
-        tech="ont",
         data_type="wgs",
     )
     out_vcf = tmp_path / "out.vcf.gz"

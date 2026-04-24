@@ -8,7 +8,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from locusguard.config.schema import LocusConfig
-from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
 _MIN_OVERLAP = 2
@@ -16,9 +15,6 @@ _MIN_OVERLAP = 2
 
 class HaplotypeConsistencyEvidence:
     name = "haplotype_consistency"
-
-    def supports(self, tech: ReadTech) -> bool:
-        return tech == "ont"
 
     def compute(
         self,

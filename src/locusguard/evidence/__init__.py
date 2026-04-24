@@ -1,5 +1,5 @@
 """Evidence adapters — each computes one evidence score from reads + config."""
-from locusguard.evidence.base import EvidenceSource, ReadTech
+from locusguard.evidence.base import EvidenceSource
 from locusguard.evidence.coverage_ratio import CoverageRatioEvidence
 from locusguard.evidence.haplotype_consistency import HaplotypeConsistencyEvidence
 from locusguard.evidence.mapq_pattern import MapqPatternEvidence
@@ -12,6 +12,5 @@ __all__ = [
     "HaplotypeConsistencyEvidence",
     "MapqPatternEvidence",
     "PSVEvidence",
-    "ReadTech",
     "SoftclipEvidence",
 ]

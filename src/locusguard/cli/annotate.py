@@ -30,9 +30,6 @@ def annotate(
         Path | None,
         typer.Option("--reference-fasta", help="Path to reference FASTA (overrides env/config)."),
     ] = None,
-    tech: Annotated[
-        str, typer.Option("--tech", help="Read technology (ont | short-read).")
-    ] = "ont",
     data_type: Annotated[
         str, typer.Option("--data-type", help="Data type (wgs | wes).")
     ] = "wgs",
@@ -86,7 +83,6 @@ def annotate(
     annotator = Annotator(
         configs=configs,
         reference_fasta=fasta_path,
-        tech=tech,
         data_type=data_type,
     )
 

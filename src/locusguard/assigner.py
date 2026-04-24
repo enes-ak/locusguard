@@ -15,7 +15,7 @@ import pysam
 from locusguard.config.resolver import ResolvedProfile, resolve_profile
 from locusguard.config.schema import PSV, LocusConfig
 from locusguard.depth import DepthStats, compute_region_depth
-from locusguard.evidence.base import EvidenceSource, ReadTech
+from locusguard.evidence.base import EvidenceSource
 from locusguard.evidence.coverage_ratio import CoverageRatioEvidence
 from locusguard.evidence.haplotype_consistency import HaplotypeConsistencyEvidence
 from locusguard.evidence.mapq_pattern import MapqPatternEvidence
@@ -171,15 +171,6 @@ class LocusAssigner:
                 maybe_cluster.psv_pattern if maybe_cluster is not None else None
             )
 
-        detected = bam.detect_tech()
-        tech: ReadTech
-        if detected == "ont":
-            tech = "ont"
-        elif detected == "short-read":
-            tech = "short-read"
-        else:
-            tech = "ont" if reads and reads[0].is_long_read else "short-read"
-
         # Depth preflight pass: measure depth of primary + paralog regions
         depths_by_name = self._measure_depths(bam)
 
@@ -207,16 +198,6 @@ class LocusAssigner:
             read_cluster: HaplotypeCluster | None = read_to_cluster.get(read.read_id)
             evidences: list[EvidenceScore] = []
             for adapter in adapters:
-                if not adapter.supports(tech):
-                    evidences.append(
-                        EvidenceScore(
-                            source=adapter.name,
-                            normalized=0.0,
-                            raw={"reason": f"unsupported for tech={tech}"},
-                            available=False,
-                        )
-                    )
-                    continue
                 evidences.append(adapter.compute([read], self._config))
 
             confidence, status, flags = score_assignment(

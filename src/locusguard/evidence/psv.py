@@ -8,7 +8,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from locusguard.config.schema import LocusConfig
-from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
 
@@ -19,9 +18,6 @@ class PSVEvidence:
 
     def __init__(self, target_locus: str) -> None:
         self._target = target_locus
-
-    def supports(self, tech: ReadTech) -> bool:
-        return True  # PSV matching works on any read technology
 
     def compute(
         self,

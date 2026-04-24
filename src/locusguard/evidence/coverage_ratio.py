@@ -11,7 +11,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from locusguard.config.schema import LocusConfig
-from locusguard.evidence.base import ReadTech
 from locusguard.types import AnalyzedRead, EvidenceScore
 
 
@@ -25,9 +24,6 @@ class CoverageRatioEvidence:
     ) -> None:
         self._locus_id = locus_id
         self._depths = depths_by_locus
-
-    def supports(self, tech: ReadTech) -> bool:
-        return tech == "ont"
 
     def compute(
         self,

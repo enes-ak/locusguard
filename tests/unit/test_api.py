@@ -80,7 +80,6 @@ confidence_thresholds:
     annotator = Annotator(
         configs=[smn1, smn2],
         reference_fasta=smn_like_fasta,
-        tech="ont",
         data_type="wgs",
     )
     out_vcf = tmp_path / "out.vcf.gz"

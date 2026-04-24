@@ -57,7 +57,6 @@ def test_gene_conversion_flagged(
     annotator = Annotator(
         configs=[smn1],
         reference_fasta=multi_psv_fasta,
-        tech="ont",
         data_type="wgs",
     )
     out_vcf = tmp_path / "out.vcf.gz"

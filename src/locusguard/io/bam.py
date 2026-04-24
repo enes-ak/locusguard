@@ -47,33 +47,6 @@ class BamReader:
         median = lengths[len(lengths) // 2]
         return median > self._LONG_READ_MEDIAN_THRESHOLD
 
-    def detect_tech(self) -> str:
-        """Detect read technology: 'ont' | 'short-read' | 'unknown'.
-
-        Priority:
-          1. @RG PL tag (ILLUMINA -> short-read, ONT/NANOPORE -> ont)
-          2. Median read length heuristic (>500bp -> ont)
-        """
-        header = self._bam.header.to_dict()
-        for rg in header.get("RG", []):
-            pl = (rg.get("PL") or "").upper()
-            if pl == "ILLUMINA":
-                return "short-read"
-            if pl in ("ONT", "NANOPORE", "OXFORD_NANOPORE"):
-                return "ont"
-
-        lengths: list[int] = []
-        for read in self._bam.head(100):
-            if read.query_length:
-                lengths.append(read.query_length)
-        if not lengths:
-            return "unknown"
-        lengths.sort()
-        median = lengths[len(lengths) // 2]
-        if median > self._LONG_READ_MEDIAN_THRESHOLD:
-            return "ont"
-        return "short-read"
-
     def close(self) -> None:
         self._bam.close()
 
