@@ -6,28 +6,41 @@ from pathlib import Path
 import cyvcf2
 import pysam
 
+from locusguard.capture_bed import CaptureBedError, CaptureRegion, load_capture_bed
+
 
 class PreflightError(RuntimeError):
     """A pre-flight check failed; the run must not proceed."""
 
 
-def run_preflight(bam: Path, vcf: Path | None, fasta: Path) -> None:
-    """Validate that inputs are structurally sound before processing starts.
+def run_preflight(
+    bam: Path,
+    vcf: Path | None,
+    fasta: Path,
+    capture_bed: Path | None = None,
+) -> list[CaptureRegion] | None:
+    """Run pre-flight validation. Returns parsed capture regions when
+    ``capture_bed`` is provided, otherwise ``None``.
 
-    Checks:
-      - BAM has a usable index (.bai or .csi)
-      - BAM is coordinate-sorted
-      - FASTA has a .fai (builds one if missing)
-      - BAM chromosomes are present in FASTA
-      - VCF (if provided) has .tbi index and at least one sample
-
-    Raises PreflightError with a human-readable message on any failure.
+    Raises ``PreflightError`` on any failure. BAM/FASTA/VCF checks unchanged
+    from prior behavior; ``capture_bed`` is validated if provided.
     """
     _check_bam(bam)
     _check_fasta(fasta)
     _check_bam_fasta_compat(bam, fasta)
     if vcf is not None:
         _check_vcf(vcf)
+
+    if capture_bed is None:
+        return None
+    if not capture_bed.exists():
+        raise PreflightError(f"Capture bed file not found: {capture_bed}")
+    try:
+        return load_capture_bed(capture_bed)
+    except CaptureBedError as e:
+        raise PreflightError(
+            f"Failed to parse capture bed {capture_bed}: {e}"
+        ) from e
 
 
 def _check_bam(bam: Path) -> None:

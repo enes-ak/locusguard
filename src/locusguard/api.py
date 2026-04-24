@@ -22,6 +22,7 @@ from pathlib import Path
 
 from locusguard import __version__
 from locusguard.assigner import LocusAssigner
+from locusguard.capture_bed import PsvCoverage, compute_psv_coverage
 from locusguard.config.schema import LocusConfig
 from locusguard.io.bam import BamReader
 from locusguard.io.fasta import FastaReader
@@ -65,10 +66,12 @@ class Annotator:
         configs: list[LocusConfig],
         reference_fasta: Path,
         data_type: str,
+        capture_bed: Path | None = None,
     ) -> None:
         self._configs = configs
         self._reference_fasta = reference_fasta
         self._data_type = data_type
+        self._capture_bed = capture_bed
         self._profile_name = _DATATYPE_TO_PROFILE.get(data_type)
 
     def annotate_vcf(
@@ -83,12 +86,34 @@ class Annotator:
         haplotypes_tsv_path: Path | None = None,
         html_report_path: Path | None = None,
     ) -> AnnotationResult:
-        run_preflight(bam=bam, vcf=vcf_in, fasta=self._reference_fasta)
+        capture_regions = run_preflight(
+            bam=bam, vcf=vcf_in, fasta=self._reference_fasta,
+            capture_bed=self._capture_bed,
+        )
         start = time.perf_counter()
 
         assignments_by_locus: dict[str, list[Assignment]] = {}
         clusters_by_locus: dict[str, list[HaplotypeCluster]] = {}
         warnings: list[str] = [_SCOPE_WARNING]
+        psv_coverage_by_locus: dict[str, PsvCoverage] | None = None
+        if capture_regions is not None:
+            psv_coverage_by_locus = {
+                cfg.locus.id: compute_psv_coverage(cfg, capture_regions)
+                for cfg in self._configs
+            }
+            for cfg in self._configs:
+                cov = psv_coverage_by_locus[cfg.locus.id]
+                for missing_name in cov.missing:
+                    psv = next(p for p in cfg.psvs if p.name == missing_name)
+                    warnings.append(
+                        f"{cfg.locus.id}: PSV {missing_name} ({psv.chrom}:{psv.pos}) "
+                        f"not in capture bed — confidence for this locus may be reduced"
+                    )
+        elif self._data_type in ("wes", "panel"):
+            warnings.append(
+                f"--data-type {self._data_type} without --capture-bed — "
+                f"PSV coverage cannot be verified"
+            )
         with (
             BamReader(bam) as bam_reader,
             FastaReader(self._reference_fasta) as fasta_reader,
@@ -134,6 +159,7 @@ class Annotator:
                 variant_counts_by_locus=counts_by_locus,
                 gene_conv_flags_by_locus=gene_conv_flags,
                 gene_conv_evidence_by_locus=gene_conv_evidence,
+                psv_coverage_by_locus=psv_coverage_by_locus,
             )
 
         if manifest_path is not None:
@@ -173,6 +199,7 @@ class Annotator:
                 gene_conv_flags_by_locus=gene_conv_flags,
                 warnings=warnings,
                 degradations=self._collect_degradations(assignments_by_locus),
+                psv_coverage_by_locus=psv_coverage_by_locus,
             )
 
         return AnnotationResult(

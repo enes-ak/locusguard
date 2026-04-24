@@ -101,4 +101,29 @@ confidence_thresholds:
     assert summary["loci"]["SMN1"]["status"] == "RESOLVED"
 
 
+def test_annotator_accepts_capture_bed_kwarg():
+    """Annotator.__init__ accepts an optional capture_bed Path."""
+    from pathlib import Path
 
+    from locusguard.api import Annotator
+    # The constructor alone should not touch disk — just store the value.
+    annotator = Annotator(
+        configs=[],
+        reference_fasta=Path("/fake/ref.fa"),
+        data_type="panel",
+        capture_bed=Path("/fake/cap.bed"),
+    )
+    # Verify the attribute is stored (implementation detail, but useful to lock)
+    assert annotator._capture_bed == Path("/fake/cap.bed")
+
+
+def test_annotator_capture_bed_defaults_to_none():
+    from pathlib import Path
+
+    from locusguard.api import Annotator
+    annotator = Annotator(
+        configs=[],
+        reference_fasta=Path("/fake/ref.fa"),
+        data_type="wgs",
+    )
+    assert annotator._capture_bed is None
