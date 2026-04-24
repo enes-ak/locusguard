@@ -5,6 +5,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from locusguard.capture_bed import PsvCoverage
 from locusguard.deletion import classify_deletion
 from locusguard.types import Assignment
 
@@ -19,6 +20,7 @@ def write_summary(
     variant_counts_by_locus: dict[str, int],
     gene_conv_flags_by_locus: dict[str, bool] | None = None,
     gene_conv_evidence_by_locus: dict[str, str] | None = None,
+    psv_coverage_by_locus: dict[str, PsvCoverage] | None = None,
 ) -> None:
     gene_conv_flags_by_locus = gene_conv_flags_by_locus or {}
     gene_conv_evidence_by_locus = gene_conv_evidence_by_locus or {}
@@ -33,6 +35,13 @@ def write_summary(
         block["gene_conv_flag"] = gene_conv_flags_by_locus.get(locus_id, False)
         if locus_id in gene_conv_evidence_by_locus:
             block["gene_conv_evidence"] = gene_conv_evidence_by_locus[locus_id]
+        if psv_coverage_by_locus and locus_id in psv_coverage_by_locus:
+            cov = psv_coverage_by_locus[locus_id]
+            block["psv_coverage"] = {
+                "covered": cov.covered,
+                "missing": cov.missing,
+                "fraction_covered": round(cov.fraction_covered, 3),
+            }
         loci_block[locus_id] = block
 
     doc = {

@@ -168,3 +168,61 @@ def test_summary_includes_deletion_status_indeterminate(tmp_path):
     import json
     doc = json.loads(out.read_text())
     assert doc["loci"]["SMN1"]["deletion_status"] == "INDETERMINATE"
+
+
+def test_summary_includes_psv_coverage_when_provided(tmp_path):
+    """Per-locus summary block carries psv_coverage when the kwarg is provided."""
+    from locusguard.capture_bed import PsvCoverage
+    from locusguard.reporting.summary import write_summary
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus="SMN1", confidence=0.9,
+            status="RESOLVED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(12)
+    ]
+    out = tmp_path / "s.json"
+    write_summary(
+        output_path=out, sample_name="x", reference="grch38",
+        data_type="panel", runtime_seconds=0.1,
+        assignments_by_locus={"SMN1": assignments},
+        variant_counts_by_locus={"SMN1": 0},
+        psv_coverage_by_locus={
+            "SMN1": PsvCoverage(
+                covered=["c.840C>T"], missing=["c.*3G>A"], fraction_covered=0.5,
+            ),
+        },
+    )
+    import json
+    doc = json.loads(out.read_text())
+    assert doc["loci"]["SMN1"]["psv_coverage"] == {
+        "covered": ["c.840C>T"],
+        "missing": ["c.*3G>A"],
+        "fraction_covered": 0.5,
+    }
+
+
+def test_summary_omits_psv_coverage_when_not_provided(tmp_path):
+    """Without the kwarg, psv_coverage must be absent from the summary."""
+    from locusguard.reporting.summary import write_summary
+    from locusguard.types import Assignment
+
+    assignments = [
+        Assignment(
+            read_id=f"r{i}", assigned_locus="SMN1", confidence=0.9,
+            status="RESOLVED", evidence_scores=[], locus_key="SMN1:abc",
+        )
+        for i in range(12)
+    ]
+    out = tmp_path / "s.json"
+    write_summary(
+        output_path=out, sample_name="x", reference="grch38",
+        data_type="wgs", runtime_seconds=0.1,
+        assignments_by_locus={"SMN1": assignments},
+        variant_counts_by_locus={"SMN1": 0},
+    )
+    import json
+    doc = json.loads(out.read_text())
+    assert "psv_coverage" not in doc["loci"]["SMN1"]

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from jinja2 import Environment, select_autoescape
 
+from locusguard.capture_bed import PsvCoverage
 from locusguard.deletion import classify_deletion
 from locusguard.types import Assignment, HaplotypeCluster
 
@@ -70,6 +71,23 @@ _TEMPLATE = """<!DOCTYPE html>
         <span style="font-style: italic; margin-left: 0.6em;">no confident read assignment — target paralog likely absent</span>
       {% elif _ds == 'INDETERMINATE' %}
         <span style="font-style: italic; margin-left: 0.6em;">too few reads evaluated for a reliable call</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if summary.psv_coverage %}
+    <div class="psv-coverage-panel" style="margin-top: 0.6em; padding: 0.6em; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 3px;">
+      <strong>PSV Coverage:</strong>
+      <span style="margin-left: 0.4em;">{{ summary.psv_coverage.covered|length }} covered / {{ summary.psv_coverage.missing|length }} missing</span>
+      {% if summary.psv_coverage.covered %}
+      <div style="margin-top: 0.3em; font-size: 0.95em;">
+        <em>Covered PSVs:</em> {{ summary.psv_coverage.covered|join(', ')|safe }}
+      </div>
+      {% endif %}
+      {% if summary.psv_coverage.missing %}
+      <div style="margin-top: 0.3em; font-size: 0.95em;">
+        <em>Missing PSVs:</em> {{ summary.psv_coverage.missing|join(', ')|safe }}
+      </div>
       {% endif %}
     </div>
     {% endif %}
@@ -136,6 +154,7 @@ def write_html_report(
     gene_conv_flags_by_locus: dict[str, bool],
     warnings: list[str],
     degradations: list[dict[str, str]],
+    psv_coverage_by_locus: dict[str, PsvCoverage] | None = None,
 ) -> None:
     env = Environment(autoescape=select_autoescape(["html"]))
     template = env.from_string(_TEMPLATE)
@@ -152,6 +171,7 @@ def write_html_report(
             for note in c.notes:
                 if note.startswith("hotspot_match:"):
                     hotspot_names.append(note.split(":", 1)[1])
+        psv_cov = (psv_coverage_by_locus or {}).get(locus_id)
         locus_summaries[locus_id] = {
             "status": status,
             "mean_conf": mean_conf,
@@ -170,6 +190,15 @@ def write_html_report(
                 for c in clusters
             ],
             "deletion_status": classify_deletion(assignments),
+            "psv_coverage": (
+                {
+                    "covered": psv_cov.covered,
+                    "missing": psv_cov.missing,
+                    "fraction_covered": psv_cov.fraction_covered,
+                }
+                if psv_cov is not None
+                else None
+            ),
         }
 
     html = template.render(
